@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HK Bus Tracker (Smart KMB Alternative)</title>
+    <title>HK Bus Tracker (Stable KMB Alternative)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -21,46 +21,30 @@
 
     <nav class="navbar navbar-dark bg-dark sticky-top shadow-sm">
         <div class="container-fluid justify-content-center">
-            <span class="navbar-brand mb-0 h1"><i class="fa-solid fa-bus me-2 text-danger"></i> Smart KMB ETA Tracker</span>
+            <span class="navbar-brand mb-0 h1"><i class="fa-solid fa-bus me-2 text-danger"></i> Stable KMB ETA Tracker</span>
         </div>
     </nav>
 
     <div class="container py-3">
-        <!-- Search -->
         <div class="input-group mb-3 shadow-sm">
-            <input type="text" id="routeInput" class="form-control form-control-lg text-uppercase" placeholder="Enter Route (e.g., 87D, 1A)" aria-label="Bus Route">
+            <input type="text" id="routeInput" class="form-control form-control-lg text-uppercase" placeholder="Enter Route (e.g., 87D, 213M, 1A)" aria-label="Bus Route">
             <button class="btn btn-danger px-4" type="button" onclick="searchRoute()"><i class="fa-solid fa-magnifying-glass"></i></button>
         </div>
 
-        <!-- Dynamic Destination-Based Direction Selectors -->
-        <div id="directionBlock" class="d-grid gap-2 mb-3 d-none">
-            <button type="button" id="dirOutbound" class="btn btn-danger text-start py-2 px-3 shadow-sm" onclick="switchDirection('outbound')">
-                <i class="fa-solid fa-circle-arrow-right me-2"></i><span id="txtOutbound">Loading Outbound...</span>
-            </button>
-            <button type="button" id="dirInbound" class="btn btn-outline-danger text-start py-2 px-3 shadow-sm" onclick="switchDirection('inbound')">
-                <i class="fa-solid fa-circle-arrow-right me-2"></i><span id="txtInbound">Loading Inbound...</span>
-            </button>
-        </div>
+        <div id="directionBlock" class="d-grid gap-2 mb-3 d-none"></div>
 
-        <!-- UI Loader -->
         <div id="loading" class="text-center py-5 d-none">
             <div class="spinner-border text-danger" role="status"></div>
-            <p class="text-muted mt-2 small">Mapping route endpoints and stop arrays...</p>
+            <p class="text-muted mt-2 small">Resolving transit configuration profiles...</p>
         </div>
 
-        <!-- Stops Display list -->
         <div id="stopList" class="list-group"></div>
     </div>
 
     <script>
         const API_BASE = "https://data.etabus.gov.hk/v1/transport/kmb";
-        let currentRouteData = [];
-        let currentDirection = "outbound"; 
         let activeRoute = "";
-        
-        // Named terminals mapped dynamically from API
-        let destOutboundName = "Outbound";
-        let destInboundName = "Inbound";
+        let availableVariants = []; // Stores real API direction configs for the route
 
         async function searchRoute() {
             activeRoute = document.getElementById('routeInput').value.trim().toUpperCase();
@@ -68,55 +52,88 @@
 
             toggleElement('loading', true);
             clearDisplay();
+            document.getElementById('directionBlock').innerHTML = "";
             document.getElementById('directionBlock').classList.add('d-none');
 
             try {
-                // 1. Resolve terminal names for the buttons dynamically
+                // 1. Query general route config variants (resolves direction mapping differences)
                 const routeMetaResp = await fetch(`${API_BASE}/route/${activeRoute}`);
                 const routeMeta = await routeMetaResp.json();
                 
-                if(routeMeta.data && routeMeta.data.length > 0) {
-                    // Match Outbound (O) and Inbound (I) destination targets
-                    const outBoundMeta = routeMeta.data.find(r => r.dir === 'O');
-                    const inBoundMeta = routeMeta.data.find(r => r.dir === 'I');
-                    
-                    destOutboundName = outBoundMeta ? outBoundMeta.dest_tc : "Outbound Target";
-                    destInboundName = inBoundMeta ? inBoundMeta.dest_tc : "Inbound Target";
-                    
-                    document.getElementById('txtOutbound').innerText = `往 ${destOutboundName}`;
-                    document.getElementById('txtInbound').innerText = `往 ${destInboundName}`;
-                }
-
-                // 2. Fetch structural stops
-                const response = await fetch(`${API_BASE}/route-stop/${activeRoute}/outbound`);
-                const stopData = await response.json();
-                
-                if (!stopData.data || stopData.data.length === 0) {
-                    alert("Route code invalid or has no registered public data.");
+                if (!routeMeta.data || routeMeta.data.length === 0) {
+                    alert("Route code invalid or not registered in KMB Open Data profile.");
                     toggleElement('loading', false);
                     return;
                 }
 
-                currentRouteData = stopData.data;
-                await renderStops();
-                
+                // Keep all operational directions/service types returned by KMB for this route
+                availableVariants = routeMeta.data;
+
+                // 2. Generate destination selector buttons matching the true operational routes
+                const directionContainer = document.getElementById('directionBlock');
+                availableVariants.forEach((variant, index) => {
+                    const btn = document.createElement('button');
+                    btn.type = "button";
+                    btn.id = `dirBtn-${index}`;
+                    // Highlight first route configuration by default
+                    btn.className = `btn btn-${index === 0 ? 'danger' : 'outline-danger'} text-start py-2 px-3 shadow-sm`;
+                    btn.onclick = () => loadRouteVariant(index);
+                    btn.innerHTML = `<i class="fa-solid fa-circle-arrow-right me-2"></i>往 ${variant.dest_tc} <small class="text-muted">(${variant.orig_tc} 起點)</small>`;
+                    directionContainer.appendChild(btn);
+                });
+
                 document.getElementById('directionBlock').classList.remove('d-none');
+                
+                // Load default configuration immediately
+                await loadRouteVariant(0);
+
             } catch (err) {
                 console.error(err);
-                alert("Data communication loss. Check connections.");
+                alert("Network communication loss when parsing API signatures.");
             } finally {
                 toggleElement('loading', false);
             }
         }
 
-        async function renderStops() {
+        async function loadRouteVariant(index) {
+            toggleElement('loading', true);
+            clearDisplay();
+
+            // Update active state of button selections
+            availableVariants.forEach((_, idx) => {
+                const btn = document.getElementById(`dirBtn-${idx}`);
+                if (btn) btn.className = `btn btn-${idx === index ? 'danger' : 'outline-danger'} text-start py-2 px-3 shadow-sm`;
+            });
+
+            const targetVariant = availableVariants[index];
+            // Resolve bound key strings safely for URL assembly requirements
+            const pathBound = targetVariant.bound === 'O' ? 'outbound' : 'inbound';
+            const pathServiceType = targetVariant.service_type || '1';
+
+            try {
+                // Fetch the absolute matching stop list using all verified data variables
+                const stopSequenceResp = await fetch(`${API_BASE}/route-stop/${activeRoute}/${pathBound}/${pathServiceType}`);
+                const stopSequenceData = await stopSequenceResp.json();
+
+                if (!stopSequenceData.data || stopSequenceData.data.length === 0) {
+                    document.getElementById('stopList').innerHTML = `<div class="alert alert-warning">Could not resolve sequence mapping details for this direction profile.</div>`;
+                    return;
+                }
+
+                await renderStops(stopSequenceData.data, targetVariant);
+            } catch (err) {
+                console.error(err);
+                alert("Error rendering selected stop sequences.");
+            } finally {
+                toggleElement('loading', false);
+            }
+        }
+
+        async function renderStops(stops, variantMeta) {
             const listContainer = document.getElementById('stopList');
             listContainer.innerHTML = "";
 
-            const stopsToRender = currentRouteData.filter(item => item.dir === currentDirection);
-            const activeTargetDest = currentDirection === 'outbound' ? destOutboundName : destInboundName;
-
-            for (const stop of stopsToRender) {
+            for (const stop of stops) {
                 const stopDetailResp = await fetch(`${API_BASE}/stop/${stop.stop}`);
                 const stopDetail = await stopDetailResp.json();
                 const stopName = stopDetail.data.name_tc || "Unknown Station Point";
@@ -126,7 +143,7 @@
                 card.className = "list-group-item list-group-item-action d-flex justify-content-between align-items-center mb-2 rounded eta-card p-3 shadow-sm";
                 card.innerHTML = `
                     <div>
-                        <small class="text-muted d-block font-monospace">SEQ ${stop.seq} • <span>往 ${activeTargetDest}</span></small>
+                        <small class="text-muted d-block font-monospace">SEQ ${stop.seq} • <span>往 ${variantMeta.dest_tc}</span></small>
                         <strong class="fs-5">${stopName}</strong>
                     </div>
                     <span class="badge bg-secondary badge-eta" id="eta-${stop.stop}">
@@ -135,17 +152,19 @@
                 `;
                 listContainer.appendChild(card);
 
-                fetchLiveETA(stop.stop, card.querySelector(`#eta-${stop.stop}`), card);
+                // Send precise target profile structures directly down to the sub-thread components
+                fetchLiveETA(stop.stop, card.querySelector(`#eta-${stop.stop}`), card, variantMeta);
             }
         }
 
-        async function fetchLiveETA(stopId, elementNode, cardNode) {
+        async function fetchLiveETA(stopId, elementNode, cardNode, variantMeta) {
             try {
-                const response = await fetch(`${API_BASE}/eta/${stopId}/${activeRoute}/1`);
+                const serviceTypeParam = variantMeta.service_type || '1';
+                const response = await fetch(`${API_BASE}/eta/${stopId}/${activeRoute}/${serviceTypeParam}`);
                 const etaResult = await response.json();
                 
-                const targetDirectionSig = currentDirection === 'outbound' ? 'O' : 'I';
-                const relevantEtas = etaResult.data.filter(item => item.dir === targetDirectionSig);
+                // Isolate updates explicitly matching the chosen bounding code
+                const relevantEtas = etaResult.data.filter(item => item.dir === variantMeta.bound);
 
                 if (relevantEtas.length > 0 && relevantEtas[0].eta) {
                     const etaTime = new Date(relevantEtas[0].eta);
@@ -153,8 +172,7 @@
                     const minutesLeft = Math.round(diffMs / 60000);
                     const formattedClockTime = etaTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     
-                    // Pull endpoint string directly variant from data tracking matrix block
-                    const specificDest = relevantEtas[0].dest_tc || ""; 
+                    const specificDest = relevantEtas[0].dest_tc || variantMeta.dest_tc; 
 
                     let timeDisplayStr = "";
                     let targetLabel = `<span class="dest-indicator">往 ${specificDest}</span>`;
@@ -190,16 +208,6 @@
                 elementNode.innerText = "Error";
                 elementNode.className = "badge bg-secondary badge-eta";
             }
-        }
-
-        function switchDirection(dir) {
-            currentDirection = dir;
-            
-            // Toggle visual button designs
-            document.getElementById('dirOutbound').className = `btn btn-${dir === 'outbound' ? 'danger' : 'outline-danger'} text-start py-2 px-3 shadow-sm`;
-            document.getElementById('dirInbound').className = `btn btn-${dir === 'inbound' ? 'danger' : 'outline-danger'} text-start py-2 px-3 shadow-sm`;
-            
-            renderStops();
         }
 
         function toggleElement(id, show) {
