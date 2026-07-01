@@ -26,18 +26,22 @@
     </nav>
 
     <div class="container py-3">
+        <!-- Search Bar -->
         <div class="input-group mb-3 shadow-sm">
             <input type="text" id="routeInput" class="form-control form-control-lg text-uppercase" placeholder="Enter Route (e.g., 87D, 1A, 213M)" aria-label="Bus Route">
             <button class="btn btn-danger px-4" type="button" onclick="searchRoute()"><i class="fa-solid fa-magnifying-glass"></i></button>
         </div>
 
+        <!-- Direction Selection Buttons -->
         <div id="directionBlock" class="d-grid gap-2 mb-3 d-none"></div>
 
+        <!-- Loader -->
         <div id="loading" class="text-center py-5 d-none">
             <div class="spinner-border text-danger" role="status"></div>
             <p class="text-muted mt-2 small">Resolving transit configuration profiles...</p>
         </div>
 
+        <!-- Stop Sequence List Area -->
         <div id="stopList" class="list-group"></div>
     </div>
 
@@ -56,20 +60,25 @@
             document.getElementById('directionBlock').classList.add('d-none');
 
             try {
-                // Fetch the route specification explicitly (without loading the entire database)
-                const routeMetaResp = await fetch(`${API_BASE}/route/${activeRoute}`);
-                const routeMeta = await routeMetaResp.json();
+                // FIX: Fetch the absolute master list list, then filter down to the matched route client-side
+                const routeMetaResp = await fetch(`${API_BASE}/route/`);
+                const allRoutesData = await routeMetaResp.json();
                 
-                if (!routeMeta.data || routeMeta.data.length === 0) {
+                if (!allRoutesData.data || allRoutesData.data.length === 0) {
+                    alert("Unable to fetch master route listing from government server.");
+                    return;
+                }
+
+                // Extract only the variants matching the typed route query (e.g., "87D")
+                availableVariants = allRoutesData.data.filter(item => item.route === activeRoute);
+                
+                if (availableVariants.length === 0) {
                     alert("Route code invalid or not registered in KMB Open Data profile.");
                     toggleElement('loading', false);
                     return;
                 }
 
-                // Keep track of the valid variations (Outbound, Inbound, Special routes)
-                availableVariants = routeMeta.data;
-
-                // Build selection buttons safely
+                // 2. Generate destination buttons cleanly from our filtered results
                 const directionContainer = document.getElementById('directionBlock');
                 availableVariants.forEach((variant, index) => {
                     const btn = document.createElement('button');
@@ -83,7 +92,7 @@
 
                 document.getElementById('directionBlock').classList.remove('d-none');
                 
-                // Fire up default initialization block 
+                // Automatically display the first discovered route variant path right away
                 await loadRouteVariant(0);
 
             } catch (err) {
@@ -105,7 +114,6 @@
 
             const targetVariant = availableVariants[index];
             
-            // Translate explicit bound characters safely to match path requirements
             const urlDirectionParam = (targetVariant.bound === 'O') ? 'outbound' : 'inbound';
             const urlServiceTypeParam = targetVariant.service_type || '1';
 
