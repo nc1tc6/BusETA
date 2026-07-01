@@ -111,26 +111,21 @@
 
         async function autoDiscoverStopIDs() {
             try {
-                // Fetch route stop sequences for key routes passing through these stations
                 const [r42A, r948, r243M] = await Promise.all([
                     fetch(`${API_BASE}/route-stop/42A/outbound/1`).then(r => r.json()),
                     fetch(`${API_BASE}/route-stop/948/outbound/1`).then(r => r.json()),
                     fetch(`${API_BASE}/route-stop/243M/outbound/1`).then(r => r.json())
                 ]);
 
-                // Collect unique stop hashes to query efficiently
                 const uniqueStopHashes = new Set();
                 [r42A, r948, r243M].forEach(res => {
                     if (res.data) res.data.forEach(item => uniqueStopHashes.add(item.stop));
                 });
 
-                // Fetch stop details in parallel batches to find matches
                 const stopArray = Array.from(uniqueStopHashes);
-                const detailPromises = stopArray.map(id => 
-                    fetch(`${API_BASE}/stop/${id}`).then(r => r.json()).catch(() => null)
+                const details = await Promise.all(
+                    stopArray.map(id => fetch(`${API_BASE}/stop/${id}`).then(r => r.json()).catch(() => null))
                 );
-                
-                const details = await Promise.all(detailPromises);
 
                 details.forEach(detail => {
                     if (detail && detail.data) {
@@ -142,7 +137,6 @@
                     }
                 });
 
-                // Activation toggle
                 const refreshBtn = document.getElementById("refreshBtn");
                 refreshBtn.removeAttribute("disabled");
                 refreshBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Refresh';
@@ -155,9 +149,31 @@
             }
         }
 
-        function fetchAllETAs() {
+        async function fetchAllETAs() {
             const rows = document.querySelectorAll(".bus-row");
             
+            // Set everything to updating status visually first
+            rows.forEach(row => {
+                row.querySelector(".eta-container").innerHTML = `<span class="badge bg-secondary badge-eta">Updating...</span>`;
+            });
+
+            // Gather the unique active 16-char IDs we discovered
+            const activeStopIds = Object.values(stopHexMap).filter(Boolean);
+            const stopDataCache = {};
+
+            // Fetch whole stations in parallel batches (Only 3 clean requests instead of 11)
+            await Promise.all(activeStopIds.map(async (stopId) => {
+                try {
+                    const response = await fetch(`${API_BASE}/stop-eta/${stopId}`);
+                    const json = await response.json();
+                    stopDataCache[stopId] = json.data || [];
+                } catch (e) {
+                    console.error(`Failed loading stop data for ${stopId}`, e);
+                    stopDataCache[stopId] = [];
+                }
+            }));
+
+            // Map the downloaded data down into the UI elements locally
             rows.forEach(row => {
                 const route = row.getAttribute("data-route");
                 const keyword = row.getAttribute("data-keyword");
@@ -169,23 +185,15 @@
                     return;
                 }
 
-                container.innerHTML = `<span class="badge bg-secondary badge-eta">Updating...</span>`;
-                getLineArrivalDetails(route, resolvedStopId, container);
-            });
-        }
+                const completeStopDataset = stopDataCache[resolvedStopId] || [];
 
-        async function getLineArrivalDetails(route, stopId, containerNode) {
-            try {
-                // Request the generic service profile variant
-                const response = await fetch(`${API_BASE}/eta/${stopId}/${route}/1`);
-                const etaResult = await response.json();
-                
-                const targetedLogs = (etaResult.data || [])
-                    .filter(item => item.eta)
-                    .sort((a, b) => a.eta_seq - b.eta_seq);
+                // Filter down out of the station block to matches for this row's route code
+                const targetedLogs = completeStopDataset
+                    .filter(item => item.route === route && item.eta)
+                    .sort((a, b) => new Date(a.eta) - new Date(b.eta));
 
                 if (targetedLogs.length > 0) {
-                    containerNode.innerHTML = ""; 
+                    container.innerHTML = ""; 
                     const busesToShow = targetedLogs.slice(0, 2);
 
                     busesToShow.forEach((bus, index) => {
@@ -217,14 +225,12 @@
                             ${timeText}
                             <span class="arrival-time">${formattedClockTime}</span>
                         `;
-                        containerNode.appendChild(etaBadge);
+                        container.appendChild(etaBadge);
                     });
                 } else {
-                    containerNode.innerHTML = `<span class="badge bg-light text-muted border badge-eta">No Service</span>`;
+                    container.innerHTML = `<span class="badge bg-light text-muted border badge-eta">No Service</span>`;
                 }
-            } catch (e) {
-                containerNode.innerHTML = `<span class="badge bg-secondary badge-eta">Failed</span>`;
-            }
+            });
         }
     </script>
 </body>
