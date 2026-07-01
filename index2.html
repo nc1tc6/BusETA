@@ -21,7 +21,7 @@
     <nav class="navbar navbar-dark bg-danger sticky-top shadow-sm">
         <div class="container-fluid d-flex justify-content-between px-3">
             <span class="navbar-brand mb-0 h1"><i class="fa-solid fa-table-list me-2"></i> My Commute Board</span>
-            <button id="refreshBtn" class="btn btn-outline-light btn-sm" onclick="fetchAllETAs()" disabled><i class="fa-solid fa-rotate"></i> Syncing...</button>
+            <button id="refreshBtn" class="btn btn-outline-light btn-sm" onclick="fetchAllETAs()" disabled><i class="fa-solid fa-sync fa-spin"></i> Connecting KMB...</button>
         </div>
     </nav>
 
@@ -30,18 +30,18 @@
         <div class="station-header shadow-sm">
             <i class="fa-solid fa-location-dot me-2 text-warning"></i> 長康邨康順樓 (TY313)
         </div>
-        <div class="shadow-sm" id="group-TY313">
+        <div class="shadow-sm">
             <div class="bus-row" data-route="43C" data-keyword="康順樓">
                 <span class="route-badge">43C</span>
-                <span class="badge bg-secondary badge-eta">Resolving...</span>
+                <span class="badge bg-secondary badge-eta">Waiting...</span>
             </div>
             <div class="bus-row" data-route="42A" data-keyword="康順樓">
                 <span class="route-badge">42A</span>
-                <span class="badge bg-secondary badge-eta">Resolving...</span>
+                <span class="badge bg-secondary badge-eta">Waiting...</span>
             </div>
             <div class="bus-row" data-route="42C" data-keyword="康順樓">
                 <span class="route-badge">42C</span>
-                <span class="badge bg-secondary badge-eta">Resolving...</span>
+                <span class="badge bg-secondary badge-eta">Waiting...</span>
             </div>
         </div>
 
@@ -49,18 +49,18 @@
         <div class="station-header shadow-sm">
             <i class="fa-solid fa-location-dot me-2 text-warning"></i> 長康邨康祥樓 (TY256)
         </div>
-        <div class="shadow-sm" id="group-TY256">
+        <div class="shadow-sm">
             <div class="bus-row" data-route="948" data-keyword="康祥樓">
                 <span class="route-badge">948</span>
-                <span class="badge bg-secondary badge-eta">Resolving...</span>
+                <span class="badge bg-secondary badge-eta">Waiting...</span>
             </div>
             <div class="bus-row" data-route="X42C" data-keyword="康祥樓">
                 <span class="route-badge">X42C</span>
-                <span class="badge bg-secondary badge-eta">Resolving...</span>
+                <span class="badge bg-secondary badge-eta">Waiting...</span>
             </div>
             <div class="bus-row" data-route="948A" data-keyword="康祥樓">
                 <span class="route-badge">948A</span>
-                <span class="badge bg-secondary badge-eta">Resolving...</span>
+                <span class="badge bg-secondary badge-eta">Waiting...</span>
             </div>
         </div>
 
@@ -68,26 +68,26 @@
         <div class="station-header shadow-sm">
             <i class="fa-solid fa-location-dot me-2 text-warning"></i> 青盛苑 (TY317)
         </div>
-        <div class="shadow-sm" id="group-TY317">
+        <div class="shadow-sm">
             <div class="bus-row" data-route="948B" data-keyword="青盛苑">
                 <span class="route-badge">948B</span>
-                <span class="badge bg-secondary badge-eta">Resolving...</span>
+                <span class="badge bg-secondary badge-eta">Waiting...</span>
             </div>
             <div class="bus-row" data-route="43B" data-keyword="青盛苑">
                 <span class="route-badge">43B</span>
-                <span class="badge bg-secondary badge-eta">Resolving...</span>
+                <span class="badge bg-secondary badge-eta">Waiting...</span>
             </div>
             <div class="bus-row" data-route="243M" data-keyword="青盛苑">
                 <span class="route-badge">243M</span>
-                <span class="badge bg-secondary badge-eta">Resolving...</span>
+                <span class="badge bg-secondary badge-eta">Waiting...</span>
             </div>
             <div class="bus-row" data-route="241X" data-keyword="青盛苑">
                 <span class="route-badge">241X</span>
-                <span class="badge bg-secondary badge-eta">Resolving...</span>
+                <span class="badge bg-secondary badge-eta">Waiting...</span>
             </div>
             <div class="bus-row" data-route="49A" data-keyword="青盛苑">
                 <span class="route-badge">49A</span>
-                <span class="badge bg-secondary badge-eta">Resolving...</span>
+                <span class="badge bg-secondary badge-eta">Waiting...</span>
             </div>
         </div>
     </div>
@@ -95,7 +95,7 @@
     <script>
         const API_BASE = "https://data.etabus.gov.hk/v1/transport/kmb";
         
-        // This dictionary will automatically store the resolved 16-character hex keys
+        // This will securely store verified internal system tracking IDs
         let stopHexMap = {
             "康順樓": null,
             "康祥樓": null,
@@ -103,56 +103,45 @@
         };
 
         document.addEventListener("DOMContentLoaded", async () => {
-            await autoResolveStopIds();
-            document.getElementById("refreshBtn").removeAttribute("disabled");
-            document.getElementById("refreshBtn").innerHTML = '<i class="fa-solid fa-rotate"></i> Refresh';
-            
-            fetchAllETAs();
-            setInterval(fetchAllETAs, 30000);
+            await initializeMasterDirectory();
         });
 
-        // Background initialization mapping script
-        async function autoResolveStopIds() {
+        // Downloads the complete system index exactly once to look up mapping values cleanly
+        async function initializeMasterDirectory() {
             try {
-                // Use key primary anchor lines to look up stops configuration profiles safely
-                const [resp1, resp2, resp3] = await Promise.all([
-                    fetch(`${API_BASE}/route-stop/42A/outbound/1`),
-                    fetch(`${API_BASE}/route-stop/948/outbound/1`),
-                    fetch(`${API_BASE}/route-stop/243M/outbound/1`)
-                ]);
+                const response = await fetch(`${API_BASE}/stop`);
+                const masterData = await response.json();
+                
+                if (masterData && masterData.data) {
+                    for (let station of masterData.data) {
+                        // Securely intercept and isolate target locations within Tsing Yi area scope
+                        if (station.name_tc.includes("長康邨康順樓") || (station.name_tc.includes("康順樓") && station.lat > 22.34)) {
+                            stopHexMap["康順樓"] = station.stop;
+                        }
+                        if (station.name_tc.includes("長康邨康祥樓") || (station.name_tc.includes("康祥樓") && station.lat > 22.34)) {
+                            stopHexMap["康祥樓"] = station.stop;
+                        }
+                        if (station.name_tc.includes("青盛苑")) {
+                            stopHexMap["青盛苑"] = station.stop;
+                        }
+                    }
+                }
 
-                const [data1, data2, data3] = await Promise.all([resp1.json(), resp2.json(), resp3.json()]);
+                // Verify mapping success status
+                console.log("Resolved Station Keys:", stopHexMap);
 
-                // Map target properties safely
-                if(data1.data) {
-                    for(let item of data1.data) {
-                        const detail = await (await fetch(`${API_BASE}/stop/${item.stop}`)).json();
-                        if (detail.data && detail.data.name_tc.includes("康順樓")) {
-                            stopHexMap["康順樓"] = item.stop;
-                            break;
-                        }
-                    }
-                }
-                if(data2.data) {
-                    for(let item of data2.data) {
-                        const detail = await (await fetch(`${API_BASE}/stop/${item.stop}`)).json();
-                        if (detail.data && detail.data.name_tc.includes("康祥樓")) {
-                            stopHexMap["康祥樓"] = item.stop;
-                            break;
-                        }
-                    }
-                }
-                if(data3.data) {
-                    for(let item of data3.data) {
-                        const detail = await (await fetch(`${API_BASE}/stop/${item.stop}`)).json();
-                        if (detail.data && detail.data.name_tc.includes("青盛苑")) {
-                            stopHexMap["青盛苑"] = item.stop;
-                            break;
-                        }
-                    }
-                }
-            } catch (e) {
-                console.error("Initialization sequence fallback exception: ", e);
+                // Enable interactivity once safely connected
+                const refreshBtn = document.getElementById("refreshBtn");
+                refreshBtn.removeAttribute("disabled");
+                refreshBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Refresh';
+                
+                // Trigger initial load and set a smooth 30-second loop interval counter
+                fetchAllETAs();
+                setInterval(fetchAllETAs, 30000);
+
+            } catch (err) {
+                console.error("Directory synchronisation failure:", err);
+                document.getElementById("refreshBtn").innerText = "Sync Failed";
             }
         }
 
@@ -163,10 +152,10 @@
                 const route = row.getAttribute("data-route");
                 const keyword = row.getAttribute("data-keyword");
                 const badge = row.querySelector(".badge-eta");
-                const targetHexId = stopHexMap[keyword];
+                const resolvedStopHex = stopHexMap[keyword];
 
-                if (!targetHexId) {
-                    badge.innerText = "Sync Error";
+                if (!resolvedStopHex) {
+                    badge.innerText = "Error Mapping";
                     badge.className = "badge bg-dark badge-eta";
                     return;
                 }
@@ -174,20 +163,22 @@
                 badge.innerText = "Updating...";
                 badge.className = "badge bg-secondary badge-eta";
 
-                getSingleETA(route, targetHexId, badge);
+                getLineArrivalDetails(route, resolvedStopHex, badge);
             });
         }
 
-        async function getSingleETA(route, stopHexId, elementNode) {
+        async function getLineArrivalDetails(route, stopHexId, elementNode) {
             try {
-                const response = await fetch(`${API_BASE}/eta/${stopHexId}/${route}/1`);
-                const etaResult = await response.json();
+                // Querying the specific stop-level master stream brings back all variations for that point instantly
+                const response = await fetch(`${API_BASE}/stop-eta/${stopHexId}`);
+                const stopMasterLogs = await response.json();
                 
-                // Read arrivals dynamically regardless of inbound/outbound setup for target terminal config
-                const relevantEtas = etaResult.data || [];
+                // Isolate arrivals explicitly matching this specific bus route name signature string
+                const targetedLogs = (stopMasterLogs.data || []).filter(item => item.route === route && item.eta);
 
-                if (relevantEtas.length > 0 && relevantEtas[0].eta) {
-                    const etaTime = new Date(relevantEtas[0].eta);
+                if (targetedLogs.length > 0) {
+                    const nextBus = targetedLogs[0];
+                    const etaTime = new Date(nextBus.eta);
                     const diffMs = etaTime - new Date();
                     const minutesLeft = Math.round(diffMs / 60000);
                     const formattedClockTime = etaTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -218,7 +209,7 @@
                     elementNode.className = "badge bg-light text-muted border badge-eta";
                 }
             } catch (e) {
-                elementNode.innerText = "Error";
+                elementNode.innerText = "Failed";
                 elementNode.className = "badge bg-secondary badge-eta";
             }
         }
