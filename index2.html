@@ -154,4 +154,167 @@
                         <span class="route-badge">243M</span>
                         <div class="eta-container"><small class="text-muted">Loading...</small></div>
                     </div>
-                    <div class="bus-row" data-route="43B" data-dir
+                    <div class="bus-row" data-route="43B" data-dir="outbound">
+                        <span class="route-badge">43B</span>
+                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
+                    </div>
+                    <div class="bus-row" data-route="249M" data-dir="outbound">
+                        <span class="route-badge">249M</span>
+                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
+                    </div>
+                    <div class="bus-row" data-route="42C" data-dir="outbound">
+                        <span class="route-badge">42C</span>
+                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
+                    </div>
+                    <div class="bus-row" data-route="241X" data-dir="outbound">
+                        <span class="route-badge">241X</span>
+                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="station-card variant-green">
+                <div class="station-title">青盛苑 (Ching Shing Court)</div>
+                <div class="card-body p-0">
+                    <div class="bus-row" data-route="948" data-dir="inbound">
+                        <span class="route-badge">948</span>
+                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
+                    </div>
+                    <div class="bus-row" data-route="948A" data-dir="inbound">
+                        <span class="route-badge">948A</span>
+                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
+                    </div>
+                    <div class="bus-row" data-route="948B" data-dir="inbound">
+                        <span class="route-badge">948B</span>
+                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
+                    </div>
+                    <div class="bus-row" data-route="948X" data-dir="inbound">
+                        <span class="route-badge">948X</span>
+                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
+                    </div>
+                    <div class="bus-row" data-route="43M" data-dir="outbound">
+                        <span class="route-badge">43M</span>
+                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
+                    </div>
+                    <div class="bus-row" data-route="X42C" data-dir="outbound">
+                        <span class="route-badge">X42C</span>
+                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="station-card variant-blue">
+                <div class="station-title">青華苑 — 往新界北/大嶼山/機場</div>
+                <div class="card-body p-0">
+                    <div class="bus-row" data-route="279X" data-dir="outbound">
+                        <span class="route-badge">279X</span>
+                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
+                    </div>
+                    <div class="bus-row" data-route="68E" data-dir="inbound">
+                        <span class="route-badge">68E</span>
+                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
+                    </div>
+                    <div class="bus-row" data-route="E42" data-dir="outbound">
+                        <span class="route-badge">E42</span>
+                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
+                    </div>
+                    <div class="bus-row" data-route="E31" data-dir="outbound">
+                        <span class="route-badge">E31</span>
+                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
+                    </div>
+                    <div class="bus-row" data-route="E32" data-dir="outbound">
+                        <span class="route-badge">E32</span>
+                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
+                    </div>
+                    <div class="bus-row" data-route="A32" data-dir="outbound">
+                        <span class="route-badge">A32</span>
+                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="station-card variant-purple">
+                <div class="station-title">青華苑 — 往市區/沙田</div>
+                <div class="card-body p-0">
+                    <div class="bus-row" data-route="E42" data-dir="inbound">
+                        <span class="route-badge">E42</span>
+                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            getETAs();
+            setInterval(getETAs, 30000); 
+        });
+
+        async function getETAs() {
+            const rows = document.querySelectorAll(".bus-row");
+            
+            rows.forEach(async (row) => {
+                const route = row.getAttribute("data-route");
+                const dir = row.getAttribute("data-dir");
+                const container = row.querySelector(".eta-container");
+
+                try {
+                    const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-eta/${route}`);
+                    const json = await res.json();
+                    
+                    const records = (json.data || []).filter(item => 
+                        item.dir === dir && 
+                        item.eta && (
+                            item.dest_tc_name?.includes("康順樓") || 
+                            item.dest_tc_name?.includes("青盛苑") || 
+                            item.dest_tc_name?.includes("青華苑") ||
+                            item.dest_en_name?.includes("Hong Shun House") || 
+                            item.dest_en_name?.includes("Ching Shing Court") ||
+                            item.dest_en_name?.includes("Ching Wah Court")
+                        )
+                    );
+
+                    if (records.length > 0) {
+                        container.innerHTML = "";
+                        records.sort((a, b) => new Date(a.eta) - new Date(b.eta));
+                        
+                        records.slice(0, 3).forEach((bus) => {
+                            const timeDiff = Math.round((new Date(bus.eta) - new Date()) / 60000);
+                            const clock = new Date(bus.eta).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                            
+                            let statusClass = "status-far";
+                            let txt = `${timeDiff}m`;
+
+                            if (timeDiff <= 0) { txt = "Arrived"; statusClass = "status-near"; }
+                            else if (timeDiff <= 4) { statusClass = "status-near"; }
+                            else if (timeDiff <= 9) { statusClass = "status-mid"; }
+
+                            container.innerHTML += `
+                                <div class="eta-box ${statusClass}">
+                                    <b>${txt}</b>
+                                    <span class="eta-time">${clock}</span>
+                                </div>`;
+                        });
+                    } else {
+                        const fallbackRecords = (json.data || []).filter(item => item.dir === dir && item.eta).slice(0, 3);
+                        if (fallbackRecords.length > 0) {
+                            container.innerHTML = "";
+                            fallbackRecords.forEach(bus => {
+                                const timeDiff = Math.round((new Date(bus.eta) - new Date()) / 60000);
+                                const clock = new Date(bus.eta).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                                container.innerHTML += `<div class="eta-box status-far"><b>${timeDiff}m</b><span class="eta-time">${clock}</span></div>`;
+                            });
+                        } else {
+                            container.innerHTML = `<span class="text-muted small">No Service</span>`;
+                        }
+                    }
+                } catch (e) {
+                    container.innerHTML = `<span class="text-danger small">Error</span>`;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
