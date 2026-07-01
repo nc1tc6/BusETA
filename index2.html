@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Bus Dashboard (Pinpoint Dual ETA)</title>
+    <title>My Bus Dashboard (Auto-Fix Dual ETA)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -23,7 +23,9 @@
     <nav class="navbar navbar-dark bg-danger sticky-top shadow-sm">
         <div class="container-fluid d-flex justify-content-between px-3">
             <span class="navbar-brand mb-0 h1"><i class="fa-solid fa-table-list me-2"></i> My Commute Board</span>
-            <button id="refreshBtn" class="btn btn-outline-light btn-sm" onclick="fetchAllETAs()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+            <button id="refreshBtn" class="btn btn-outline-light btn-sm" onclick="fetchAllETAs()" disabled>
+                <i class="fa-solid fa-sync fa-spin"></i> Finding Stops...
+            </button>
         </div>
     </nav>
 
@@ -33,17 +35,17 @@
             <i class="fa-solid fa-location-dot me-2 text-warning"></i> 長康邨康順樓 (TY313)
         </div>
         <div class="shadow-sm">
-            <div class="bus-row" data-route="43C" data-stopid="852A062400">
+            <div class="bus-row" data-route="43C" data-keyword="康順樓">
                 <span class="route-badge">43C</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
             </div>
-            <div class="bus-row" data-route="42A" data-stopid="852A062400">
+            <div class="bus-row" data-route="42A" data-keyword="康順樓">
                 <span class="route-badge">42A</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
             </div>
-            <div class="bus-row" data-route="42C" data-stopid="852A062400">
+            <div class="bus-row" data-route="42C" data-keyword="康順樓">
                 <span class="route-badge">42C</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
             </div>
         </div>
 
@@ -52,17 +54,17 @@
             <i class="fa-solid fa-location-dot me-2 text-warning"></i> 長康邨康祥樓 (TY256)
         </div>
         <div class="shadow-sm">
-            <div class="bus-row" data-route="948" data-stopid="852A060400">
+            <div class="bus-row" data-route="948" data-keyword="康祥樓">
                 <span class="route-badge">948</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
             </div>
-            <div class="bus-row" data-route="X42C" data-stopid="852A060400">
+            <div class="bus-row" data-route="X42C" data-keyword="康祥樓">
                 <span class="route-badge">X42C</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
             </div>
-            <div class="bus-row" data-route="948A" data-stopid="852A060400">
+            <div class="bus-row" data-route="948A" data-keyword="康祥樓">
                 <span class="route-badge">948A</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
             </div>
         </div>
 
@@ -71,65 +73,119 @@
             <i class="fa-solid fa-location-dot me-2 text-warning"></i> 青盛苑 (TY317)
         </div>
         <div class="shadow-sm">
-            <div class="bus-row" data-route="948B" data-stopid="852A062200">
+            <div class="bus-row" data-route="948B" data-keyword="青盛苑">
                 <span class="route-badge">948B</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
             </div>
-            <div class="bus-row" data-route="43B" data-stopid="852A062200">
+            <div class="bus-row" data-route="43B" data-keyword="青盛苑">
                 <span class="route-badge">43B</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
             </div>
-            <div class="bus-row" data-route="243M" data-stopid="852A062200">
+            <div class="bus-row" data-route="243M" data-keyword="青盛苑">
                 <span class="route-badge">243M</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
             </div>
-            <div class="bus-row" data-route="241X" data-stopid="852A062200">
+            <div class="bus-row" data-route="241X" data-keyword="青盛苑">
                 <span class="route-badge">241X</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
             </div>
-            <div class="bus-row" data-route="49A" data-stopid="852A062200">
+            <div class="bus-row" data-route="49A" data-keyword="青盛苑">
                 <span class="route-badge">49A</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
             </div>
         </div>
     </div>
 
     <script>
         const API_BASE = "https://data.etabus.gov.hk/v1/transport/kmb";
+        
+        let stopHexMap = {
+            "康順樓": null,
+            "康祥樓": null,
+            "青盛苑": null
+        };
 
         document.addEventListener("DOMContentLoaded", () => {
-            fetchAllETAs();
-            setInterval(fetchAllETAs, 30000);
+            autoDiscoverStopIDs();
         });
+
+        async function autoDiscoverStopIDs() {
+            try {
+                // Fetch route stop sequences for key routes passing through these stations
+                const [r42A, r948, r243M] = await Promise.all([
+                    fetch(`${API_BASE}/route-stop/42A/outbound/1`).then(r => r.json()),
+                    fetch(`${API_BASE}/route-stop/948/outbound/1`).then(r => r.json()),
+                    fetch(`${API_BASE}/route-stop/243M/outbound/1`).then(r => r.json())
+                ]);
+
+                // Collect unique stop hashes to query efficiently
+                const uniqueStopHashes = new Set();
+                [r42A, r948, r243M].forEach(res => {
+                    if (res.data) res.data.forEach(item => uniqueStopHashes.add(item.stop));
+                });
+
+                // Fetch stop details in parallel batches to find matches
+                const stopArray = Array.from(uniqueStopHashes);
+                const detailPromises = stopArray.map(id => 
+                    fetch(`${API_BASE}/stop/${id}`).then(r => r.json()).catch(() => null)
+                );
+                
+                const details = await Promise.all(detailPromises);
+
+                details.forEach(detail => {
+                    if (detail && detail.data) {
+                        const name = detail.data.name_tc;
+                        const stopId = detail.data.stop;
+                        if (name.includes("康順樓")) stopHexMap["康順樓"] = stopId;
+                        if (name.includes("康祥樓")) stopHexMap["康祥樓"] = stopId;
+                        if (name.includes("青盛苑")) stopHexMap["青盛苑"] = stopId;
+                    }
+                });
+
+                // Activation toggle
+                const refreshBtn = document.getElementById("refreshBtn");
+                refreshBtn.removeAttribute("disabled");
+                refreshBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Refresh';
+
+                fetchAllETAs();
+                setInterval(fetchAllETAs, 30000);
+            } catch (err) {
+                console.error("Auto-discovery failed:", err);
+                document.getElementById("refreshBtn").innerText = "Network Error";
+            }
+        }
 
         function fetchAllETAs() {
             const rows = document.querySelectorAll(".bus-row");
             
             rows.forEach(row => {
                 const route = row.getAttribute("data-route");
-                const stopId = row.getAttribute("data-stopid");
+                const keyword = row.getAttribute("data-keyword");
                 const container = row.querySelector(".eta-container");
+                const resolvedStopId = stopHexMap[keyword];
+
+                if (!resolvedStopId) {
+                    container.innerHTML = `<span class="badge bg-dark badge-eta">Not Found</span>`;
+                    return;
+                }
 
                 container.innerHTML = `<span class="badge bg-secondary badge-eta">Updating...</span>`;
-                getLineArrivalDetails(route, stopId, container);
+                getLineArrivalDetails(route, resolvedStopId, container);
             });
         }
 
         async function getLineArrivalDetails(route, stopId, containerNode) {
             try {
-                // Using the specific pinpoint endpoint avoids mixed-up variant datasets
+                // Request the generic service profile variant
                 const response = await fetch(`${API_BASE}/eta/${stopId}/${route}/1`);
                 const etaResult = await response.json();
                 
-                // Filter out empty timestamps and match chronological sequencing patterns
                 const targetedLogs = (etaResult.data || [])
                     .filter(item => item.eta)
                     .sort((a, b) => a.eta_seq - b.eta_seq);
 
                 if (targetedLogs.length > 0) {
                     containerNode.innerHTML = ""; 
-
-                    // Slice out the top two incoming vehicles
                     const busesToShow = targetedLogs.slice(0, 2);
 
                     busesToShow.forEach((bus, index) => {
