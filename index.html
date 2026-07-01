@@ -26,25 +26,29 @@
     </nav>
 
     <div class="container py-3">
+        <!-- Search Bar -->
         <div class="input-group mb-3 shadow-sm">
-            <input type="text" id="routeInput" class="form-control form-control-lg text-uppercase" placeholder="Enter Route (e.g., 87D, 213M, 1A)" aria-label="Bus Route">
+            <input type="text" id="routeInput" class="form-control form-control-lg text-uppercase" placeholder="Enter Route (e.g., 87D, 1A, 213M)" aria-label="Bus Route">
             <button class="btn btn-danger px-4" type="button" onclick="searchRoute()"><i class="fa-solid fa-magnifying-glass"></i></button>
         </div>
 
+        <!-- Direction Selection Buttons -->
         <div id="directionBlock" class="d-grid gap-2 mb-3 d-none"></div>
 
+        <!-- Loader -->
         <div id="loading" class="text-center py-5 d-none">
             <div class="spinner-border text-danger" role="status"></div>
             <p class="text-muted mt-2 small">Resolving transit configuration profiles...</p>
         </div>
 
+        <!-- Stop Sequence List Area -->
         <div id="stopList" class="list-group"></div>
     </div>
 
     <script>
         const API_BASE = "https://data.etabus.gov.hk/v1/transport/kmb";
         let activeRoute = "";
-        let availableVariants = []; // Stores real API direction configs for the route
+        let availableVariants = [];
 
         async function searchRoute() {
             activeRoute = document.getElementById('routeInput').value.trim().toUpperCase();
@@ -56,7 +60,7 @@
             document.getElementById('directionBlock').classList.add('d-none');
 
             try {
-                // 1. Query general route config variants (resolves direction mapping differences)
+                // 1. Fetch global variant arrays matching this code string
                 const routeMetaResp = await fetch(`${API_BASE}/route/${activeRoute}`);
                 const routeMeta = await routeMetaResp.json();
                 
@@ -66,16 +70,14 @@
                     return;
                 }
 
-                // Keep all operational directions/service types returned by KMB for this route
                 availableVariants = routeMeta.data;
 
-                // 2. Generate destination selector buttons matching the true operational routes
+                // 2. Generate button layout options
                 const directionContainer = document.getElementById('directionBlock');
                 availableVariants.forEach((variant, index) => {
                     const btn = document.createElement('button');
                     btn.type = "button";
                     btn.id = `dirBtn-${index}`;
-                    // Highlight first route configuration by default
                     btn.className = `btn btn-${index === 0 ? 'danger' : 'outline-danger'} text-start py-2 px-3 shadow-sm`;
                     btn.onclick = () => loadRouteVariant(index);
                     btn.innerHTML = `<i class="fa-solid fa-circle-arrow-right me-2"></i>往 ${variant.dest_tc} <small class="text-muted">(${variant.orig_tc} 起點)</small>`;
@@ -84,7 +86,7 @@
 
                 document.getElementById('directionBlock').classList.remove('d-none');
                 
-                // Load default configuration immediately
+                // Trigger compilation loop using first sequence variant definition found
                 await loadRouteVariant(0);
 
             } catch (err) {
@@ -99,20 +101,20 @@
             toggleElement('loading', true);
             clearDisplay();
 
-            // Update active state of button selections
             availableVariants.forEach((_, idx) => {
                 const btn = document.getElementById(`dirBtn-${idx}`);
                 if (btn) btn.className = `btn btn-${idx === index ? 'danger' : 'outline-danger'} text-start py-2 px-3 shadow-sm`;
             });
 
             const targetVariant = availableVariants[index];
-            // Resolve bound key strings safely for URL assembly requirements
-            const pathBound = targetVariant.bound === 'O' ? 'outbound' : 'inbound';
-            const pathServiceType = targetVariant.service_type || '1';
+            
+            // FIX: Translate 'O' and 'I' directly to strings expected by the endpoint paths
+            const urlDirectionParam = (targetVariant.bound === 'O') ? 'outbound' : 'inbound';
+            const urlServiceTypeParam = targetVariant.service_type || '1';
 
             try {
-                // Fetch the absolute matching stop list using all verified data variables
-                const stopSequenceResp = await fetch(`${API_BASE}/route-stop/${activeRoute}/${pathBound}/${pathServiceType}`);
+                // Query path uses explicit literal string substitutions safely
+                const stopSequenceResp = await fetch(`${API_BASE}/route-stop/${activeRoute}/${urlDirectionParam}/${urlServiceTypeParam}`);
                 const stopSequenceData = await stopSequenceResp.json();
 
                 if (!stopSequenceData.data || stopSequenceData.data.length === 0) {
@@ -152,7 +154,6 @@
                 `;
                 listContainer.appendChild(card);
 
-                // Send precise target profile structures directly down to the sub-thread components
                 fetchLiveETA(stop.stop, card.querySelector(`#eta-${stop.stop}`), card, variantMeta);
             }
         }
@@ -163,7 +164,7 @@
                 const response = await fetch(`${API_BASE}/eta/${stopId}/${activeRoute}/${serviceTypeParam}`);
                 const etaResult = await response.json();
                 
-                // Isolate updates explicitly matching the chosen bounding code
+                // Track against original data payload signature bounds
                 const relevantEtas = etaResult.data.filter(item => item.dir === variantMeta.bound);
 
                 if (relevantEtas.length > 0 && relevantEtas[0].eta) {
