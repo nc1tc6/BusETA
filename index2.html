@@ -3,175 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Bus Dashboard (True Multi-Endpoint)</title>
+    <title>42A & 43C ETA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f4f6f9; max-width: 576px; margin: 0 auto; font-family: -apple-system, sans-serif; }
-        .station-header { background: #343a40; color: white; padding: 10px 15px; font-weight: bold; border-radius: 8px 8px 0 0; margin-top: 20px; }
-        .bus-row { background: white; border-bottom: 1px solid #e9ecef; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
-        .bus-row:last-child { border-bottom: none; border-radius: 0 0 8px 8px; }
-        .route-badge { font-size: 1.2rem; font-weight: 800; color: #dc3545; min-width: 70px; display: inline-block; }
-        .eta-container { display: flex; gap: 6px; }
-        .badge-eta { font-size: 0.85rem; min-width: 80px; text-align: center; padding: 6px 4px; display: inline-block; line-height: 1.2; }
-        .arrival-time { font-size: 0.65rem; display: block; opacity: 0.85; font-weight: normal; margin-top: 1px; }
-        .next-label { font-size: 0.55rem; text-transform: uppercase; font-weight: bold; opacity: 0.7; display: block; }
-        .api-status { font-size: 0.75rem; font-weight: bold; padding: 5px 10px; border-radius: 20px; }
+        body { background-color: #f4f6f9; max-width: 450px; margin: 0 auto; font-family: -apple-system, sans-serif; }
+        .station-title { background: #333; color: #fff; padding: 10px 15px; font-weight: bold; margin-top: 30px; border-radius: 6px 6px 0 0; }
+        .bus-row { background: #fff; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
+        .bus-row:last-child { border-bottom: none; border-radius: 0 0 6px 6px; }
+        .route-badge { font-size: 1.4rem; font-weight: bold; color: #d9534f; }
+        .eta-box { font-size: 0.9rem; width: 90px; text-align: center; padding: 6px; border-radius: 4px; margin-left: 8px; display: inline-block; }
+        .eta-time { font-size: 0.7rem; display: block; opacity: 0.8; }
     </style>
 </head>
 <body>
 
-    <nav class="navbar navbar-dark bg-danger sticky-top shadow-sm">
-        <div class="container-fluid d-flex justify-content-between align-items-center px-3">
-            <span class="navbar-brand mb-0 h1"><i class="fa-solid fa-table-list me-2"></i> My Commute Board</span>
-            <div class="d-flex align-items-center gap-2">
-                <span id="apiStatusIndicator" class="badge bg-warning text-dark api-status">🟡 Connecting...</span>
-                <button id="refreshBtn" class="btn btn-outline-light btn-sm" onclick="fetchAllETAs()">
-                    <i class="fa-solid fa-rotate"></i> Refresh
-                </button>
-            </div>
-        </div>
-    </nav>
+    <div class="p-3 bg-danger text-white d-flex justify-content-between align-items-center shadow-sm">
+        <h5 class="m-0">🚌 Inbound Board</h5>
+        <button class="btn btn-sm btn-outline-light" onclick="getETAs()">Refresh</button>
+    </div>
 
-    <div class="container pb-5">
-        <div class="station-header shadow-sm">
-            <i class="fa-solid fa-location-dot me-2 text-warning"></i> 長康邨康順樓 (TY313 / TY340)
-        </div>
+    <div class="container-fluid">
+        <div class="station-title">長康邨康順樓 (TY313)</div>
         <div class="shadow-sm">
-            <div class="bus-row" data-route="43C" data-stopid="3FF8A1215A42DFA3">
-                <span class="route-badge">43C <small class="text-muted" style="font-size:0.65rem; font-weight:normal;">TY313</small></span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
+            <div class="bus-row" data-route="42A">
+                <span class="route-badge">42A</span>
+                <div class="eta-container">Loading...</div>
             </div>
-            <div class="bus-row" data-route="42A" data-stopid="3FF8A1215A42DFA3">
-                <span class="route-badge">42A <small class="text-muted" style="font-size:0.65rem; font-weight:normal;">TY313</small></span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
-            </div>
-            <div class="bus-row" data-route="42C" data-stopid="67DFAB691BECE339">
-                <span class="route-badge">42C <small class="text-muted" style="font-size:0.65rem; font-weight:normal;">TY340</small></span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
-            </div>
-        </div>
-
-        <div class="station-header shadow-sm">
-            <i class="fa-solid fa-location-dot me-2 text-warning"></i> 長康邨康祥樓 (TY256)
-        </div>
-        <div class="shadow-sm">
-            <div class="bus-row" data-route="948" data-stopid="C9A09825F69B9E77">
-                <span class="route-badge">948</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
-            </div>
-            <div class="bus-row" data-route="X42C" data-stopid="C9A09825F69B9E77">
-                <span class="route-badge">X42C</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
-            </div>
-            <div class="bus-row" data-route="948A" data-stopid="C9A09825F69B9E77">
-                <span class="route-badge">948A</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
-            </div>
-        </div>
-
-        <div class="station-header shadow-sm">
-            <i class="fa-solid fa-location-dot me-2 text-warning"></i> 青盛苑 (TY317)
-        </div>
-        <div class="shadow-sm">
-            <div class="bus-row" data-route="948B" data-stopid="B69608A7C6B3D64B">
-                <span class="route-badge">948B</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
-            </div>
-            <div class="bus-row" data-route="43B" data-stopid="B69608A7C6B3D64B">
-                <span class="route-badge">43B</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
-            </div>
-            <div class="bus-row" data-route="243M" data-stopid="B69608A7C6B3D64B">
-                <span class="route-badge">243M</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
-            </div>
-            <div class="bus-row" data-route="241X" data-stopid="B69608A7C6B3D64B">
-                <span class="route-badge">241X</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
-            </div>
-            <div class="bus-row" data-route="49A" data-stopid="B69608A7C6B3D64B">
-                <span class="route-badge">49A</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Syncing...</span></div>
+            <div class="bus-row" data-route="43C">
+                <span class="route-badge">43C</span>
+                <div class="eta-container">Loading...</div>
             </div>
         </div>
     </div>
 
     <script>
-        const API_BASE = "https://data.etabus.gov.hk/v1/transport/kmb";
+        const STOP_ID = "3FF8A1215A42DFA3"; // Dedicated TY313 ID
 
         document.addEventListener("DOMContentLoaded", () => {
-            fetchAllETAs();
-            setInterval(fetchAllETAs, 30000); 
+            getETAs();
+            setInterval(getETAs, 30000); // Auto-refresh every 30 seconds
         });
 
-        async function fetchAllETAs() {
-            const statusNode = document.getElementById("apiStatusIndicator");
+        async function getETAs() {
             const rows = document.querySelectorAll(".bus-row");
             
-            statusNode.className = "badge bg-warning text-dark api-status";
-            statusNode.innerHTML = `🟡 Updating...`;
-
-            await Promise.all(Array.from(rows).map(async (row) => {
+            rows.forEach(async (row) => {
                 const route = row.getAttribute("data-route");
-                const stopId = row.getAttribute("data-stopid");
                 const container = row.querySelector(".eta-container");
 
                 try {
-                    // Query the direct route-agnostic arrival feed for this pole variant
-                    let response = await fetch(`${API_BASE}/stop-eta/${stopId}`);
-                    let json = await response.json();
-                    let rawDataset = json.data || [];
+                    const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/eta/${STOP_ID}/${route}/1`);
+                    const json = await res.json();
+                    const records = (json.data || []).filter(item => item.eta);
 
-                    // Fallback configuration check: If stop-eta filtered array fails for lines like 42A, pull line-explicit fallback endpoint
-                    let targetedLogs = rawDataset.filter(item => item.route === route && item.eta);
-
-                    if (targetedLogs.length === 0) {
-                        const fallbackResponse = await fetch(`${API_BASE}/eta/${stopId}/${route}/1`);
-                        const fallbackJson = await fallbackResponse.json();
-                        targetedLogs = (fallbackJson.data || []).filter(item => item.eta);
-                    }
-
-                    // Sort chronological delivery order
-                    targetedLogs.sort((a, b) => new Date(a.eta) - new Date(b.eta));
-
-                    if (targetedLogs.length > 0) {
-                        container.innerHTML = ""; 
-                        targetedLogs.slice(0, 2).forEach((bus, index) => {
-                            const etaTime = new Date(bus.eta);
-                            const minutesLeft = Math.round((etaTime - new Date()) / 60000);
-                            const clockTime = etaTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    if (records.length > 0) {
+                        container.innerHTML = "";
+                        records.slice(0, 2).forEach((bus) => {
+                            const timeDiff = Math.round((new Date(bus.eta) - new Date()) / 60000);
+                            const clock = new Date(bus.eta).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                             
-                            let badgeClass = "bg-success";
-                            let timeText = `${minutesLeft} min`;
-                            let label = index === 0 ? "1st" : "2nd";
+                            let color = "bg-success text-white";
+                            let txt = `${timeDiff} min`;
 
-                            if (minutesLeft < 0) { timeText = "Departed"; badgeClass = "bg-dark"; }
-                            else if (minutesLeft === 0) { timeText = "Arriving"; badgeClass = "bg-danger"; }
-                            else if (minutesLeft <= 3) { badgeClass = "bg-danger"; }
-                            else if (minutesLeft <= 8) { badgeClass = "bg-warning text-dark"; }
+                            if (timeDiff <= 0) { txt = "Arrived"; color = "bg-danger text-white"; }
+                            else if (timeDiff <= 4) { color = "bg-danger text-white"; }
+                            else if (timeDiff <= 8) { color = "bg-warning text-dark"; }
 
-                            const badge = document.createElement("span");
-                            badge.className = `badge ${badgeClass} badge-eta`;
-                            badge.innerHTML = `
-                                <span class="next-label">${label} Bus</span>
-                                ${timeText}
-                                <span class="arrival-time">${clockTime}</span>
-                            `;
-                            container.appendChild(badge);
+                            container.innerHTML += `
+                                <div class="eta-box ${color}">
+                                    <b>${txt}</b>
+                                    <span class="eta-time">${clock}</span>
+                                </div>`;
                         });
                     } else {
-                        container.innerHTML = `<span class="badge bg-light text-muted border badge-eta">No Service</span>`;
+                        container.innerHTML = `<span class="text-muted small">No Service</span>`;
                     }
                 } catch (e) {
-                    console.error(`Fetch exception encountered on line: ${route}`, e);
-                    container.innerHTML = `<span class="badge bg-danger badge-eta">Error</span>`;
+                    container.innerHTML = `<span class="text-danger small">Error</span>`;
                 }
-            }));
-
-            const timeString = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-            statusNode.className = "badge bg-success api-status";
-            statusNode.innerHTML = `🟢 Live (${timeString})`;
+            });
         }
     </script>
 </body>
