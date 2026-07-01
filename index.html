@@ -60,19 +60,25 @@
             document.getElementById('directionBlock').classList.add('d-none');
 
             try {
-                // 1. Fetch global variant arrays matching this code string
-                const routeMetaResp = await fetch(`${API_BASE}/route/${activeRoute}`);
-                const routeMeta = await routeMetaResp.json();
+                // FIX: Fetch the absolute master list list, then filter down to the matched route client-side
+                const routeMetaResp = await fetch(`${API_BASE}/route/`);
+                const allRoutesData = await routeMetaResp.json();
                 
-                if (!routeMeta.data || routeMeta.data.length === 0) {
+                if (!allRoutesData.data || allRoutesData.data.length === 0) {
+                    alert("Unable to fetch master route listing from government server.");
+                    return;
+                }
+
+                // Extract only the variants matching the typed route query (e.g., "87D")
+                availableVariants = allRoutesData.data.filter(item => item.route === activeRoute);
+                
+                if (availableVariants.length === 0) {
                     alert("Route code invalid or not registered in KMB Open Data profile.");
                     toggleElement('loading', false);
                     return;
                 }
 
-                availableVariants = routeMeta.data;
-
-                // 2. Generate button layout options
+                // 2. Generate destination buttons cleanly from our filtered results
                 const directionContainer = document.getElementById('directionBlock');
                 availableVariants.forEach((variant, index) => {
                     const btn = document.createElement('button');
@@ -86,7 +92,7 @@
 
                 document.getElementById('directionBlock').classList.remove('d-none');
                 
-                // Trigger compilation loop using first sequence variant definition found
+                // Automatically display the first discovered route variant path right away
                 await loadRouteVariant(0);
 
             } catch (err) {
@@ -108,12 +114,10 @@
 
             const targetVariant = availableVariants[index];
             
-            // FIX: Translate 'O' and 'I' directly to strings expected by the endpoint paths
             const urlDirectionParam = (targetVariant.bound === 'O') ? 'outbound' : 'inbound';
             const urlServiceTypeParam = targetVariant.service_type || '1';
 
             try {
-                // Query path uses explicit literal string substitutions safely
                 const stopSequenceResp = await fetch(`${API_BASE}/route-stop/${activeRoute}/${urlDirectionParam}/${urlServiceTypeParam}`);
                 const stopSequenceData = await stopSequenceResp.json();
 
@@ -164,7 +168,6 @@
                 const response = await fetch(`${API_BASE}/eta/${stopId}/${activeRoute}/${serviceTypeParam}`);
                 const etaResult = await response.json();
                 
-                // Track against original data payload signature bounds
                 const relevantEtas = etaResult.data.filter(item => item.dir === variantMeta.bound);
 
                 if (relevantEtas.length > 0 && relevantEtas[0].eta) {
