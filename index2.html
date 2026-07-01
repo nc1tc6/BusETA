@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bus Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; max-width: 576px; margin: 0 auto; font-family: -apple-system, sans-serif; }
+        .station-header { background: #343a40; color: white; padding: 10px 15px; font-weight: bold; border-radius: 8px 8px 0 0; margin-top: 20px; }
+        .bus-row { background: white; border-bottom: 1px solid #e9ecef; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
+        .bus-row:last-child { border-bottom: none; border-radius: 0 0 8px 8px; }
+        .route-badge { font-size: 1.2rem; font-weight: 800; color: #dc3545; min-width: 70px; display: inline-block; }
+        .badge-eta { font-size: 0.95rem; min-width: 95px; text-align: center; padding: 6px 4px; }
+        .arrival-time { font-size: 0.7rem; display: block; opacity: 0.85; font-weight: normal; margin-top: 1px; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-dark bg-danger sticky-top shadow-sm">
+        <div class="container-fluid d-flex justify-content-between px-3">
+            <span class="navbar-brand mb-0 h1"><i class="fa-solid fa-table-list me-2"></i> My Commute Board</span>
+            <button class="btn btn-outline-light btn-sm" onclick="fetchAllETAs()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+    </nav>
+
+    <div class="container pb-5">
+        <div class="station-header shadow-sm">
+            <i class="fa-solid fa-location-dot me-2 text-warning"></i> 長康邨康順樓 (TY313)
+        </div>
+        <div class="shadow-sm">
+            <div class="bus-row" data-route="43C" data-stop="TY313" data-bound="O">
+                <span class="route-badge">43C</span>
+                <span class="badge bg-secondary badge-eta">Loading...</span>
+            </div>
+            <div class="bus-row" data-route="42A" data-stop="TY313" data-bound="O">
+                <span class="route-badge">42A</span>
+                <span class="badge bg-secondary badge-eta">Loading...</span>
+            </div>
+            <div class="bus-row" data-route="42C" data-stop="TY313" data-bound="O">
+                <span class="route-badge">42C</span>
+                <span class="badge bg-secondary badge-eta">Loading...</span>
+            </div>
+        </div>
+
+        <div class="station-header shadow-sm">
+            <i class="fa-solid fa-location-dot me-2 text-warning"></i> 長康邨康祥樓 (TY256)
+        </div>
+        <div class="shadow-sm">
+            <div class="bus-row" data-route="948" data-stop="TY256" data-bound="O">
+                <span class="route-badge">948</span>
+                <span class="badge bg-secondary badge-eta">Loading...</span>
+            </div>
+            <div class="bus-row" data-route="X42C" data-stop="TY256" data-bound="O">
+                <span class="route-badge">X42C</span>
+                <span class="badge bg-secondary badge-eta">Loading...</span>
+            </div>
+            <div class="bus-row" data-route="948A" data-stop="TY256" data-bound="O">
+                <span class="route-badge">948A</span>
+                <span class="badge bg-secondary badge-eta">Loading...</span>
+            </div>
+        </div>
+
+        <div class="station-header shadow-sm">
+            <i class="fa-solid fa-location-dot me-2 text-warning"></i> 青盛苑 (TY317)
+        </div>
+        <div class="shadow-sm">
+            <div class="bus-row" data-route="948B" data-stop="TY317" data-bound="O">
+                <span class="route-badge">948B</span>
+                <span class="badge bg-secondary badge-eta">Loading...</span>
+            </div>
+            <div class="bus-row" data-route="43B" data-stop="TY317" data-bound="O">
+                <span class="route-badge">43B</span>
+                <span class="badge bg-secondary badge-eta">Loading...</span>
+            </div>
+            <div class="bus-row" data-route="243M" data-stop="TY317" data-bound="O">
+                <span class="route-badge">243M</span>
+                <span class="badge bg-secondary badge-eta">Loading...</span>
+            </div>
+            <div class="bus-row" data-route="241X" data-stop="TY317" data-bound="O">
+                <span class="route-badge">241X</span>
+                <span class="badge bg-secondary badge-eta">Loading...</span>
+            </div>
+            <div class="bus-row" data-route="49A" data-stop="TY317" data-bound="O">
+                <span class="route-badge">49A</span>
+                <span class="badge bg-secondary badge-eta">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "https://data.etabus.gov.hk/v1/transport/kmb";
+
+        // Global execution triggers on load configuration
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchAllETAs();
+            // Automatically refresh every 30 seconds to keep your dashboard live
+            setInterval(fetchAllETAs, 30000);
+        });
+
+        function fetchAllETAs() {
+            // Find every route card listed inside our HTML layout markup structure
+            const rows = document.querySelectorAll(".bus-row");
+            
+            rows.forEach(row => {
+                const route = row.getAttribute("data-route");
+                const stopId = row.getAttribute("data-stop");
+                const bound = row.getAttribute("data-bound");
+                const badge = row.querySelector(".badge-eta");
+
+                badge.innerText = "Updating...";
+                badge.className = "badge bg-secondary badge-eta";
+
+                // Dispatch individual asynchronously tracked API loops
+                getSingleETA(route, stopId, bound, badge);
+            });
+        }
+
+        async function getSingleETA(route, stopId, bound, elementNode) {
+            try {
+                // Fetch directly via the specific stop + route combination mapping requirement
+                const response = await fetch(`${API_BASE}/eta/${stopId}/${route}/1`);
+                const etaResult = await response.json();
+                
+                // Match the targeted direction code structure
+                const relevantEtas = etaResult.data.filter(item => item.dir === bound);
+
+                if (relevantEtas.length > 0 && relevantEtas[0].eta) {
+                    const etaTime = new Date(relevantEtas[0].eta);
+                    const diffMs = etaTime - new Date();
+                    const minutesLeft = Math.round(diffMs / 60000);
+                    const formattedClockTime = etaTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    
+                    let timeDisplayStr = "";
+                    
+                    if (minutesLeft < 0) {
+                        timeDisplayStr = `Departed<span class="arrival-time">${formattedClockTime}</span>`;
+                        elementNode.className = "badge bg-dark badge-eta";
+                    } else if (minutesLeft === 0) {
+                        timeDisplayStr = `Arriving<span class="arrival-time">${formattedClockTime}</span>`;
+                        elementNode.className = "badge bg-danger badge-eta";
+                    } else {
+                        timeDisplayStr = `${minutesLeft} min<span class="arrival-time">${formattedClockTime}</span>`;
+                        
+                        if (minutesLeft <= 3) {
+                            elementNode.className = "badge bg-danger badge-eta";
+                        } else if (minutesLeft <= 8) {
+                            elementNode.className = "badge bg-warning text-dark badge-eta";
+                        } else {
+                            elementNode.className = "badge bg-success badge-eta";
+                        }
+                    }
+
+                    elementNode.innerHTML = timeDisplayStr;
+                } else {
+                    elementNode.innerText = "No Service";
+                    elementNode.className = "badge bg-light text-muted border badge-eta";
+                }
+            } catch (e) {
+                elementNode.innerText = "Error";
+                elementNode.className = "badge bg-secondary badge-eta";
+            }
+        }
+    </script>
+</body>
+</html>
