@@ -6,102 +6,22 @@
     <title>Commute Matrix Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { 
-            background-color: #f8f9fa; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-        }
-        
-        /* Master Responsive Grid layout */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
-            padding: 20px 0;
-        }
-
-        /* Responsive Breakpoints */
-        @media (min-width: 768px) {
-            .dashboard-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        @media (min-width: 1200px) {
-            .dashboard-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-
-        /* Premium Minimalist Card Design */
-        .station-card {
-            background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-            border: 1px solid rgba(0, 0, 0, 0.06);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .station-title { 
-            background: #212529; 
-            color: #fff; 
-            padding: 14px 18px; 
-            font-weight: 600; 
-            font-size: 1rem;
-            letter-spacing: 0.3px;
-            border-bottom: 2px solid rgba(0,0,0,0.1);
-        }
-        
-        /* Contextual Header Variations */
+        body { background-color: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 24px; padding: 20px 0; }
+        @media (min-width: 768px) { .dashboard-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 1200px) { .dashboard-grid { grid-template-columns: repeat(3, 1fr); } }
+        .station-card { background: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04); border: 1px solid rgba(0, 0, 0, 0.06); overflow: hidden; display: flex; flex-direction: column; }
+        .station-title { background: #212529; color: #fff; padding: 14px 18px; font-weight: 600; font-size: 1rem; letter-spacing: 0.3px; border-bottom: 2px solid rgba(0,0,0,0.1); }
         .station-card.variant-alt .station-title { background: #495057; }
         .station-card.variant-green .station-title { background: #146c43; }
         .station-card.variant-blue .station-title { background: #0b5ed7; }
         .station-card.variant-purple .station-title { background: #593196; }
-
-        .bus-row { 
-            padding: 14px 18px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-bottom: 1px solid #f1f3f5; 
-            transition: background-color 0.2s ease;
-        }
+        .bus-row { padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f3f5; }
         .bus-row:last-child { border-bottom: none; }
-        .bus-row:hover { background-color: #f8f9fa; }
-
-        .route-badge { 
-            font-size: 1.25rem; 
-            font-weight: 700; 
-            color: #212529; 
-            min-width: 70px; 
-        }
-        
-        .eta-container { 
-            display: flex; 
-            gap: 8px; 
-            justify-content: flex-end; 
-            align-items: center;
-        }
-        
-        /* Modernized Flat Pill Blocks */
-        .eta-box { 
-            font-size: 0.85rem; 
-            width: 80px; 
-            text-align: center; 
-            padding: 6px 4px; 
-            border-radius: 6px; 
-            flex-shrink: 0; 
-            font-weight: 600;
-        }
-        .eta-time { 
-            font-size: 0.65rem; 
-            display: block; 
-            opacity: 0.8; 
-            font-weight: 400;
-            margin-top: 1px;
-        }
-
-        /* Color profiles based on urgency */
+        .route-badge { font-size: 1.25rem; font-weight: 700; color: #212529; min-width: 70px; }
+        .eta-container { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+        .eta-box { font-size: 0.85rem; width: 80px; text-align: center; padding: 6px 4px; border-radius: 6px; font-weight: 600; }
+        .eta-time { font-size: 0.65rem; display: block; opacity: 0.8; font-weight: 400; margin-top: 1px; }
         .status-near { background-color: #ea868f; color: #842029; }
         .status-mid { background-color: #ffe69c; color: #664d03; }
         .status-far { background-color: #c1e7c4; color: #0f5132; }
@@ -112,138 +32,23 @@
     <nav class="navbar navbar-dark bg-dark shadow-sm">
         <div class="container-fluid px-4 d-flex justify-content-between align-items-center">
             <span class="navbar-brand mb-0 h1 font-monospace fw-bold">🗺️ METRO COMMUTE HUB</span>
-            <button class="btn btn-sm btn-outline-light px-3" onclick="getETAs()">
-                🔄 Force Sync
-            </button>
+            <button class="btn btn-sm btn-outline-light px-3" onclick="getETAs()">🔄 Force Sync</button>
         </div>
     </nav>
 
     <div class="container-fluid px-4">
         <div class="dashboard-grid">
-            
             <div class="station-card">
                 <div class="station-title">長康邨康順樓 (TY313) — 往九龍/沙田</div>
                 <div class="card-body p-0">
-                    <div class="bus-row" data-route="42A" data-dir="inbound">
-                        <span class="route-badge">42A</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                    <div class="bus-row" data-route="43A" data-dir="inbound">
-                        <span class="route-badge">43A</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                    <div class="bus-row" data-route="249X" data-dir="outbound">
-                        <span class="route-badge">249X</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                    <div class="bus-row" data-route="242X" data-dir="inbound">
-                        <span class="route-badge">242X</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                    <div class="bus-row" data-route="42" data-dir="inbound">
-                        <span class="route-badge">42</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
+                    <div class="bus-row" data-route="42A" data-dir="inbound"><span class="route-badge">42A</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                    <div class="bus-row" data-route="43A" data-dir="inbound"><span class="route-badge">43A</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                    <div class="bus-row" data-route="249X" data-dir="outbound"><span class="route-badge">249X</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                    <div class="bus-row" data-route="242X" data-dir="inbound"><span class="route-badge">242X</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                    <div class="bus-row" data-route="42" data-dir="inbound"><span class="route-badge">42</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
                 </div>
             </div>
-
-            <div class="station-card variant-alt">
-                <div class="station-title">長康邨康順樓 (TY340) — 往荃灣/將軍澳</div>
-                <div class="card-body p-0">
-                    <div class="bus-row" data-route="243M" data-dir="outbound">
-                        <span class="route-badge">243M</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                    <div class="bus-row" data-route="43B" data-dir="outbound">
-                        <span class="route-badge">43B</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                    <div class="bus-row" data-route="249M" data-dir="outbound">
-                        <span class="route-badge">249M</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                    <div class="bus-row" data-route="42C" data-dir="outbound">
-                        <span class="route-badge">42C</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                    <div class="bus-row" data-route="241X" data-dir="outbound">
-                        <span class="route-badge">241X</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                </div>
             </div>
-
-            <div class="station-card variant-green">
-                <div class="station-title">青盛苑 (Ching Shing Court)</div>
-                <div class="card-body p-0">
-                    <div class="bus-row" data-route="948" data-dir="inbound">
-                        <span class="route-badge">948</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                    <div class="bus-row" data-route="948A" data-dir="inbound">
-                        <span class="route-badge">948A</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                    <div class="bus-row" data-route="948B" data-dir="inbound">
-                        <span class="route-badge">948B</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                    <div class="bus-row" data-route="948X" data-dir="inbound">
-                        <span class="route-badge">948X</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                    <div class="bus-row" data-route="43M" data-dir="outbound">
-                        <span class="route-badge">43M</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                    <div class="bus-row" data-route="X42C" data-dir="outbound">
-                        <span class="route-badge">X42C</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="station-card variant-blue">
-                <div class="station-title">青華苑 — 往新界北/大嶼山/機場</div>
-                <div class="card-body p-0">
-                    <div class="bus-row" data-route="279X" data-dir="outbound">
-                        <span class="route-badge">279X</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                    <div class="bus-row" data-route="68A" data-dir="inbound">
-                        <span class="route-badge">68A</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                    <div class="bus-row" data-route="E42" data-dir="outbound">
-                        <span class="route-badge">E42</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                    <div class="bus-row" data-route="E31" data-dir="outbound">
-                        <span class="route-badge">E31</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                    <div class="bus-row" data-route="E32" data-dir="outbound">
-                        <span class="route-badge">E32</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                    <div class="bus-row" data-route="A32" data-dir="outbound">
-                        <span class="route-badge">A32</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="station-card variant-purple">
-                <div class="station-title">青華苑 — 往市區/沙田</div>
-                <div class="card-body p-0">
-                    <div class="bus-row" data-route="E42" data-dir="inbound">
-                        <span class="route-badge">E42</span>
-                        <div class="eta-container"><small class="text-muted">Loading...</small></div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
     </div>
 
     <script>
@@ -264,13 +69,10 @@
                     const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-eta/${route}/1`);
                     const json = await res.json();
                     
+                    // REMOVED: item.seq <= 6 filter. 
+                    // Now only checking if dir matches and eta exists.
                     const records = (json.data || []).filter(item => 
-                        item.dir === dir && 
-                        (item.dest_tc_name === "長康邨康順樓" || 
-                         item.dest_tc_name === "青盛苑" || 
-                         item.dest_tc_name === "青華苑" ||
-                         item.seq <= 6) &&
-                        item.eta
+                        item.dir === dir && item.eta
                     );
 
                     if (records.length > 0) {
@@ -282,9 +84,9 @@
                             const clock = new Date(bus.eta).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                             
                             let statusClass = "status-far";
-                            let txt = `${timeDiff}m`;
+                            let txt = timeDiff <= 0 ? "Arrived" : `${timeDiff}m`;
 
-                            if (timeDiff <= 0) { txt = "Arrived"; statusClass = "status-near"; }
+                            if (timeDiff <= 0) { statusClass = "status-near"; }
                             else if (timeDiff <= 4) { statusClass = "status-near"; }
                             else if (timeDiff <= 9) { statusClass = "status-mid"; }
 
@@ -295,17 +97,7 @@
                                 </div>`;
                         });
                     } else {
-                        const fallbackRecords = (json.data || []).filter(item => item.eta).slice(0, 3);
-                        if (fallbackRecords.length > 0) {
-                            container.innerHTML = "";
-                            fallbackRecords.forEach(bus => {
-                                const timeDiff = Math.round((new Date(bus.eta) - new Date()) / 60000);
-                                const clock = new Date(bus.eta).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                                container.innerHTML += `<div class="eta-box status-far"><b>${timeDiff}m</b><span class="eta-time">${clock}</span></div>`;
-                            });
-                        } else {
-                            container.innerHTML = `<span class="text-muted small">No Service</span>`;
-                        }
+                        container.innerHTML = `<span class="text-muted small">No Service</span>`;
                     }
                 } catch (e) {
                     container.innerHTML = `<span class="text-danger small">Error</span>`;
