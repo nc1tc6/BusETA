@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Bus Dashboard (Auto-Aligning)</title>
+    <title>My Bus Dashboard (Instant Dual ETA)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -16,208 +16,180 @@
         .badge-eta { font-size: 0.85rem; min-width: 80px; text-align: center; padding: 6px 4px; display: inline-block; line-height: 1.2; }
         .arrival-time { font-size: 0.65rem; display: block; opacity: 0.85; font-weight: normal; margin-top: 1px; }
         .next-label { font-size: 0.55rem; text-transform: uppercase; font-weight: bold; opacity: 0.7; display: block; }
-        .api-status { font-size: 0.75rem; font-weight: bold; padding: 5px 10px; border-radius: 20px; }
     </style>
 </head>
 <body>
 
     <nav class="navbar navbar-dark bg-danger sticky-top shadow-sm">
-        <div class="container-fluid d-flex justify-content-between align-items-center px-3">
-            <span class="navbar-brand mb-0 h1"><i class="fa-solid fa-table-list me-2"></i> My Commute</span>
-            <div class="d-flex align-items-center gap-2">
-                <span id="apiStatusIndicator" class="badge bg-warning text-dark api-status">🟡 Bootstrapping...</span>
-                <button id="refreshBtn" class="btn btn-outline-light btn-sm" onclick="fetchLiveETAs()"><i class="fa-solid fa-rotate"></i> Refresh</button>
-            </div>
+        <div class="container-fluid d-flex justify-content-between px-3">
+            <span class="navbar-brand mb-0 h1"><i class="fa-solid fa-table-list me-2"></i> My Commute Board</span>
+            <button id="refreshBtn" class="btn btn-outline-light btn-sm" onclick="fetchAllETAs()"><i class="fa-solid fa-rotate"></i> Refresh</button>
         </div>
     </nav>
 
     <div class="container pb-5">
         <!-- Station Group 1 -->
         <div class="station-header shadow-sm">
-            <i class="fa-solid fa-location-dot me-2 text-warning"></i> 長康邨康順樓
+            <i class="fa-solid fa-location-dot me-2 text-warning"></i> 長康邨康順樓 (TY313)
         </div>
         <div class="shadow-sm">
-            <div class="bus-row" data-route="43C" data-stopname="長康邨康順樓">
+            <div class="bus-row" data-route="43C" data-stopid="852A062400">
                 <span class="route-badge">43C</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Initializing...</span></div>
+                <div class="eta-container">
+                    <span class="badge bg-secondary badge-eta">Loading...</span>
+                </div>
             </div>
-            <div class="bus-row" data-route="42A" data-stopname="長康邨康順樓">
+            <div class="bus-row" data-route="42A" data-stopid="852A062400">
                 <span class="route-badge">42A</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Initializing...</span></div>
+                <div class="eta-container">
+                    <span class="badge bg-secondary badge-eta">Loading...</span>
+                </div>
             </div>
-            <div class="bus-row" data-route="42C" data-stopname="長康邨康順樓">
+            <div class="bus-row" data-route="42C" data-stopid="852A062400">
                 <span class="route-badge">42C</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Initializing...</span></div>
+                <div class="eta-container">
+                    <span class="badge bg-secondary badge-eta">Loading...</span>
+                </div>
             </div>
         </div>
 
         <!-- Station Group 2 -->
         <div class="station-header shadow-sm">
-            <i class="fa-solid fa-location-dot me-2 text-warning"></i> 長康邨康祥樓
+            <i class="fa-solid fa-location-dot me-2 text-warning"></i> 長康邨康祥樓 (TY256)
         </div>
         <div class="shadow-sm">
-            <div class="bus-row" data-route="948" data-stopname="長康邨康祥樓">
+            <div class="bus-row" data-route="948" data-stopid="852A060400">
                 <span class="route-badge">948</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Initializing...</span></div>
+                <div class="eta-container">
+                    <span class="badge bg-secondary badge-eta">Loading...</span>
+                </div>
             </div>
-            <div class="bus-row" data-route="X42C" data-stopname="長康邨康祥樓">
+            <div class="bus-row" data-route="X42C" data-stopid="852A060400">
                 <span class="route-badge">X42C</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Initializing...</span></div>
+                <div class="eta-container">
+                    <span class="badge bg-secondary badge-eta">Loading...</span>
+                </div>
             </div>
-            <div class="bus-row" data-route="948A" data-stopname="長康邨康祥樓">
+            <div class="bus-row" data-route="948A" data-stopid="852A060400">
                 <span class="route-badge">948A</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Initializing...</span></div>
+                <div class="eta-container">
+                    <span class="badge bg-secondary badge-eta">Loading...</span>
+                </div>
             </div>
         </div>
 
         <!-- Station Group 3 -->
         <div class="station-header shadow-sm">
-            <i class="fa-solid fa-location-dot me-2 text-warning"></i> 青盛苑
+            <i class="fa-solid fa-location-dot me-2 text-warning"></i> 青盛苑 (TY317)
         </div>
         <div class="shadow-sm">
-            <div class="bus-row" data-route="948B" data-stopname="青盛苑">
+            <div class="bus-row" data-route="948B" data-stopid="852A062200">
                 <span class="route-badge">948B</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Initializing...</span></div>
+                <div class="eta-container">
+                    <span class="badge bg-secondary badge-eta">Loading...</span>
+                </div>
             </div>
-            <div class="bus-row" data-route="43B" data-stopname="青盛苑">
+            <div class="bus-row" data-route="43B" data-stopid="852A062200">
                 <span class="route-badge">43B</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Initializing...</span></div>
+                <div class="eta-container">
+                    <span class="badge bg-secondary badge-eta">Loading...</span>
+                </div>
             </div>
-            <div class="bus-row" data-route="243M" data-stopname="青盛苑">
+            <div class="bus-row" data-route="243M" data-stopid="852A062200">
                 <span class="route-badge">243M</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Initializing...</span></div>
+                <div class="eta-container">
+                    <span class="badge bg-secondary badge-eta">Loading...</span>
+                </div>
             </div>
-            <div class="bus-row" data-route="241X" data-stopname="青盛苑">
+            <div class="bus-row" data-route="241X" data-stopid="852A062200">
                 <span class="route-badge">241X</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Initializing...</span></div>
+                <div class="eta-container">
+                    <span class="badge bg-secondary badge-eta">Loading...</span>
+                </div>
             </div>
-            <div class="bus-row" data-route="49A" data-stopname="青盛苑">
+            <div class="bus-row" data-route="49A" data-stopid="852A062200">
                 <span class="route-badge">49A</span>
-                <div class="eta-container"><span class="badge bg-secondary badge-eta">Initializing...</span></div>
+                <div class="eta-container">
+                    <span class="badge bg-secondary badge-eta">Loading...</span>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         const API_BASE = "https://data.etabus.gov.hk/v1/transport/kmb";
-        let stopIdCache = {}; // Dynamically matched stop IDs store here
 
-        document.addEventListener("DOMContentLoaded", async () => {
-            await bootstrapStopIDs();
-            fetchLiveETAs();
-            setInterval(fetchLiveETAs, 30000); // 30s auto-refresh
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchAllETAs();
+            // Refreshes every 30 seconds smoothly
+            setInterval(fetchAllETAs, 30000);
         });
 
-        // Step 1: Scan global KMB index to map exact 16-char IDs safely without guesswork
-        async function bootstrapStopIDs() {
-            const statusNode = document.getElementById("apiStatusIndicator");
-            try {
-                const res = await fetch(`${API_BASE}/stop`);
-                const json = await res.json();
-                
-                // Track names we care about
-                const targetNames = ["長康邨康順樓", "長康邨康祥樓", "青盛苑"];
-                
-                json.data.forEach(s => {
-                    if (targetNames.includes(s.name_tc)) {
-                        stopIdCache[s.name_tc] = s.stop; 
-                    }
-                });
-                
-                console.log("Aligned System IDs Successfully:", stopIdCache);
-            } catch (e) {
-                console.error("Index sync error", e);
-                statusNode.className = "badge bg-danger api-status";
-                statusNode.innerHTML = `🔴 Index Error`;
-            }
-        }
-
-        // Step 2: Grab the live arrival queues directly using matched tokens
-        async function fetchLiveETAs() {
-            const statusNode = document.getElementById("apiStatusIndicator");
+        function fetchAllETAs() {
             const rows = document.querySelectorAll(".bus-row");
             
-            // Collect resolved keys cleanly
-            const stopIdsToQuery = [...new Set(Object.values(stopIdCache))];
-            
-            if (stopIdsToQuery.length === 0) {
-                statusNode.innerHTML = "🔴 Unaligned Keys";
-                return;
-            }
-
-            statusNode.className = "badge bg-warning text-dark api-status";
-            statusNode.innerHTML = `🟡 Updating...`;
-
-            const stopDataMap = {};
-            let failedFetches = 0;
-
-            await Promise.all(stopIdsToQuery.map(async (id) => {
-                try {
-                    const response = await fetch(`${API_BASE}/stop-eta/${id}`);
-                    if (!response.ok) throw new Error();
-                    const json = await response.json();
-                    stopDataMap[id] = json.data || [];
-                } catch (e) {
-                    stopDataMap[id] = null;
-                    failedFetches++;
-                }
-            }));
-
-            // Step 3: Draw data into respective visual columns
             rows.forEach(row => {
                 const route = row.getAttribute("data-route");
-                const stopName = row.getAttribute("data-stopname");
+                const stopId = row.getAttribute("data-stopid");
                 const container = row.querySelector(".eta-container");
+
+                container.innerHTML = `<span class="badge bg-secondary badge-eta">Updating...</span>`;
+                getLineArrivalDetails(route, stopId, container);
+            });
+        }
+
+        async function getLineArrivalDetails(route, stopId, containerNode) {
+            try {
+                const response = await fetch(`${API_BASE}/stop-eta/${stopId}`);
+                const stopMasterLogs = await response.json();
                 
-                const resolvedStopId = stopIdCache[stopName];
-                const dataset = stopDataMap[resolvedStopId];
-
-                if (!resolvedStopId || dataset === null) {
-                    container.innerHTML = `<span class="badge bg-danger badge-eta">Error</span>`;
-                    return;
-                }
-
-                const filtered = dataset
+                // Get all valid ETAs for this route ordered by arrival sequence
+                const targetedLogs = (stopMasterLogs.data || [])
                     .filter(item => item.route === route && item.eta)
-                    .sort((a, b) => new Date(a.eta) - new Date(b.eta));
+                    .sort((a, b) => a.eta_seq - b.eta_seq);
 
-                if (filtered.length > 0) {
-                    container.innerHTML = "";
-                    filtered.slice(0, 2).forEach((bus, index) => {
+                if (targetedLogs.length > 0) {
+                    containerNode.innerHTML = ""; // Clear updating text
+
+                    // Slice the top 2 upcoming buses
+                    const busesToShow = targetedLogs.slice(0, 2);
+
+                    busesToShow.forEach((bus, index) => {
                         const etaTime = new Date(bus.eta);
-                        const minutesLeft = Math.round((etaTime - new Date()) / 60000);
-                        const clockTime = etaTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        const diffMs = etaTime - new Date();
+                        const minutesLeft = Math.round(diffMs / 60000);
+                        const formattedClockTime = etaTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                         
                         let badgeClass = "bg-success";
                         let timeText = `${minutesLeft} min`;
-                        let label = index === 0 ? "1st" : "2nd";
+                        let labelPrefix = index === 0 ? "1st" : "2nd";
 
-                        if (minutesLeft < 0) { timeText = "Departed"; badgeClass = "bg-dark"; }
-                        else if (minutesLeft === 0) { timeText = "Arriving"; badgeClass = "bg-danger"; }
-                        else if (minutesLeft <= 3) { badgeClass = "bg-danger"; }
-                        else if (minutesLeft <= 8) { badgeClass = "bg-warning text-dark"; }
+                        if (minutesLeft < 0) {
+                            timeText = "Departed";
+                            badgeClass = "bg-dark";
+                        } else if (minutesLeft === 0) {
+                            timeText = "Arriving";
+                            badgeClass = "bg-danger";
+                        } else if (minutesLeft <= 3) {
+                            badgeClass = "bg-danger";
+                        } else if (minutesLeft <= 8) {
+                            badgeClass = "bg-warning text-dark";
+                        }
 
-                        const badge = document.createElement("span");
-                        badge.className = `badge ${badgeClass} badge-eta`;
-                        badge.innerHTML = `
-                            <span class="next-label">${label} Bus</span>
+                        const etaBadge = document.createElement("span");
+                        etaBadge.className = `badge ${badgeClass} badge-eta`;
+                        etaBadge.innerHTML = `
+                            <span class="next-label">${labelPrefix} Bus</span>
                             ${timeText}
-                            <span class="arrival-time">${clockTime}</span>
+                            <span class="arrival-time">${formattedClockTime}</span>
                         `;
-                        container.appendChild(badge);
+                        containerNode.appendChild(etaBadge);
                     });
                 } else {
-                    container.innerHTML = `<span class="badge bg-light text-muted border badge-eta">No Service</span>`;
+                    containerNode.innerHTML = `<span class="badge bg-light text-muted border badge-eta">No Service</span>`;
                 }
-            });
-
-            const timeString = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            if (failedFetches === stopIdsToQuery.length) {
-                statusNode.className = "badge bg-danger api-status";
-                statusNode.innerHTML = `🔴 Offline`;
-            } else {
-                statusNode.className = "badge bg-success api-status";
-                statusNode.innerHTML = `🟢 Online (${timeString})`;
+            } catch (e) {
+                containerNode.innerHTML = `<span class="badge bg-secondary badge-eta">Failed</span>`;
             }
         }
     </script>
