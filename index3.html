@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KMB Bus Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Global Background for Desktop */
+        body { background-color: #e9ecef; margin: 0; min-height: 100vh; }
+
+        /* The App Wrapper: Responsive Logic */
+        .app-container {
+            background-color: white;
+            min-height: 100vh;
+            width: 100%;
+            max-width: 576px; /* Ideal mobile width */
+            margin: 0 auto;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        /* Desktop: Add margin and rounded corners for a "App" feel */
+        @media (min-width: 577px) {
+            .app-container {
+                min-height: auto;
+                margin-top: 50px;
+                border-radius: 15px;
+                padding-bottom: 20px;
+            }
+        }
+
+        /* Styling for the App Content */
+        .navbar { border-bottom: 4px solid #e31837; }
+        .eta-card { border-left: 5px solid #6c757d; }
+        .badge-eta { font-size: 0.95rem; min-width: 95px; text-align: center; }
+        .arrival-time { font-size: 0.7rem; display: block; opacity: 0.85; }
+        .dest-indicator { font-size: 0.65rem; display: block; font-weight: bold; }
+        .border-imminent { border-left-color: #dc3545 !important; }
+        .border-soon { border-left-color: #ffc107 !important; }
+        .border-normal { border-left-color: #198754 !important; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <nav class="navbar navbar-dark bg-dark sticky-top shadow-sm">
+            <div class="container-fluid justify-content-center">
+                <span class="navbar-brand"><i class="fa-solid fa-bus me-2 text-danger"></i>KMB ETA Tracker</span>
+            </div>
+        </nav>
+
+        <div class="container py-3">
+            <div class="input-group mb-3 shadow-sm">
+                <input type="text" id="routeInput" class="form-control form-control-lg text-uppercase" placeholder="Enter Route (e.g., 87D)">
+                <button class="btn btn-danger px-4" type="button" onclick="searchRoute()"><i class="fa-solid fa-magnifying-glass"></i></button>
+            </div>
+
+            <div id="directionBlock" class="d-grid gap-2 mb-3 d-none"></div>
+            <div id="loading" class="text-center py-5 d-none">
+                <div class="spinner-border text-danger"></div>
+            </div>
+            <div id="stopList" class="list-group"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "https://data.etabus.gov.hk/v1/transport/kmb";
+        let activeRoute = "";
+        let availableVariants = [];
+
+        async function searchRoute() {
+            activeRoute = document.getElementById('routeInput').value.trim().toUpperCase();
+            if (!activeRoute) return;
+            toggleElement('loading', true);
+            clearDisplay();
+            document.getElementById('directionBlock').innerHTML = "";
+            document.getElementById('directionBlock').classList.add('d-none');
+            try {
+                const res = await fetch(`${API_BASE}/route/`);
+                const data = await res.json();
+                availableVariants = data.data.filter(item => item.route === activeRoute);
+                if (availableVariants.length === 0) { alert("Route not found."); toggleElement('loading', false); return; }
+                const container = document.getElementById('directionBlock');
+                availableVariants.forEach((variant, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = `btn btn-${index === 0 ? 'danger' : 'outline-danger'} text-start py-2 px-3 shadow-sm`;
+                    btn.id = `dirBtn-${index}`;
+                    btn.onclick = () => loadRouteVariant(index);
+                    btn.innerHTML = `<i class="fa-solid fa-circle-arrow-right me-2"></i>往 ${variant.dest_tc}`;
+                    container.appendChild(btn);
+                });
+                container.classList.remove('d-none');
+                await loadRouteVariant(0);
+            } catch (err) { alert("Error connecting to server."); } finally { toggleElement('loading', false); }
+        }
+
+        async function loadRouteVariant(index) {
+            toggleElement('loading', true);
+            clearDisplay();
+            const targetVariant = availableVariants[index];
+            const direction = targetVariant.bound === 'O' ? 'outbound' : 'inbound';
+            try {
+                const res = await fetch(`${API_BASE}/route-stop/${activeRoute}/${direction}/${targetVariant.service_type || '1'}`);
+                const data = await res.json();
+                for (const stop of data.data) {
+                    const stopRes = await fetch(`${API_BASE}/stop/${stop.stop}`);
+                    const stopData = await stopRes.json();
+                    const card = document.createElement('div');
+                    card.className = "list-group-item d-flex justify-content-between align-items-center mb-2 rounded eta-card p-3 shadow-sm";
+                    card.innerHTML = `<div><strong>${stopData.data.name_tc}</strong></div><span class="badge bg-secondary badge-eta" id="eta-${stop.stop}">...</span>`;
+                    document.getElementById('stopList').appendChild(card);
+                    fetchLiveETA(stop.stop, card.querySelector(`#eta-${stop.stop}`), card, targetVariant);
+                }
+            } finally { toggleElement('loading', false); }
+        }
+
+        async function fetchLiveETA(stopId, element, card, variant) {
+            const res = await fetch(`${API_BASE}/eta/${stopId}/${activeRoute}/${variant.service_type || '1'}`);
+            const data = await res.json();
+            const eta = data.data.find(i => i.dir === variant.bound);
+            if (eta) {
+                const min = Math.round((new Date(eta.eta) - new Date()) / 60000);
+                element.innerHTML = min < 0 ? "Departed" : (min === 0 ? "Arriving" : min + " min");
+                element.className = `badge ${min <= 3 ? 'bg-danger' : 'bg-success'} badge-eta`;
+                if(min <= 3) card.classList.add('border-imminent');
+            } else { element.innerText = "No Service"; }
+        }
+
+        function toggleElement(id, show) { document.getElementById(id).classList.toggle('d-none', !show); }
+        function clearDisplay() { document.getElementById('stopList').innerHTML = ""; }
+    </script>
+</body>
+</html>
