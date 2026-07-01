@@ -10,6 +10,8 @@
         .station-title { background: #333; color: #fff; padding: 10px 15px; font-weight: bold; margin-top: 25px; border-radius: 6px 6px 0 0; }
         .station-title.alt-shelter { background: #5c636a; }
         .station-title.chingshing-shelter { background: #198754; }
+        .station-title.chingwah-out { background: #0d6efd; }
+        .station-title.chingwah-in { background: #6f42c1; }
         .bus-row { background: #fff; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
         .bus-row:last-child { border-bottom: none; border-radius: 0 0 6px 6px; }
         .route-badge { font-size: 1.3rem; font-weight: bold; color: #d9534f; min-width: 75px; }
@@ -106,6 +108,44 @@
             </div>
         </div>
 
+        <!-- CARD 4: Ching Wah Court Northbound Group -->
+        <div class="station-title chingwah-out">青華苑 (Ching Wah Court) — 往新界北/航空</div>
+        <div class="shadow-sm">
+            <div class="bus-row" data-route="279X" data-dir="outbound">
+                <span class="route-badge">279X</span>
+                <div class="eta-container">Loading...</div>
+            </div>
+            <div class="bus-row" data-route="68A" data-dir="inbound">
+                <span class="route-badge">68A</span>
+                <div class="eta-container">Loading...</div>
+            </div>
+            <div class="bus-row" data-route="E42" data-dir="outbound">
+                <span class="route-badge">E42</span>
+                <div class="eta-container">Loading...</div>
+            </div>
+            <div class="bus-row" data-route="E31" data-dir="outbound">
+                <span class="route-badge">E31</span>
+                <div class="eta-container">Loading...</div>
+            </div>
+            <div class="bus-row" data-route="E32" data-dir="outbound">
+                <span class="route-badge">E32</span>
+                <div class="eta-container">Loading...</div>
+            </div>
+            <div class="bus-row" data-route="A32" data-dir="outbound">
+                <span class="route-badge">A32</span>
+                <div class="eta-container">Loading...</div>
+            </div>
+        </div>
+
+        <!-- CARD 5: Ching Wah Court Southbound Group -->
+        <div class="station-title chingwah-in">青華苑 (Ching Wah Court) — 往市區</div>
+        <div class="shadow-sm">
+            <div class="bus-row" data-route="E42" data-dir="inbound">
+                <span class="route-badge">E42</span>
+                <div class="eta-container">Loading...</div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -126,13 +166,14 @@
                     const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-eta/${route}/1`);
                     const json = await res.json();
                     
-                    // Filter matching arrays sequence parsing parameters safely
                     const records = (json.data || []).filter(item => 
                         item.dir === dir && 
                         (item.dest_tc_name === "長康邨康順樓" || 
                          item.dest_tc_name === "青盛苑" || 
+                         item.dest_tc_name === "青華苑" ||
                          item.dest_en_name?.includes("Hong Shun House") || 
                          item.dest_en_name?.includes("Ching Shing Court") ||
+                         item.dest_en_name?.includes("Ching Wah Court") ||
                          item.seq <= 6) &&
                         item.eta
                     );
