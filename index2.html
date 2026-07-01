@@ -48,7 +48,49 @@
                     <div class="bus-row" data-route="42" data-dir="inbound"><span class="route-badge">42</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
                 </div>
             </div>
+
+            <div class="station-card variant-alt">
+                <div class="station-title">長康邨康順樓 (TY340) — 往荃灣/將軍澳</div>
+                <div class="card-body p-0">
+                    <div class="bus-row" data-route="243M" data-dir="outbound"><span class="route-badge">243M</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                    <div class="bus-row" data-route="43B" data-dir="outbound"><span class="route-badge">43B</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                    <div class="bus-row" data-route="249M" data-dir="outbound"><span class="route-badge">249M</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                    <div class="bus-row" data-route="42C" data-dir="outbound"><span class="route-badge">42C</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                    <div class="bus-row" data-route="241X" data-dir="outbound"><span class="route-badge">241X</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                </div>
             </div>
+
+            <div class="station-card variant-green">
+                <div class="station-title">青盛苑 (Ching Shing Court)</div>
+                <div class="card-body p-0">
+                    <div class="bus-row" data-route="948" data-dir="inbound"><span class="route-badge">948</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                    <div class="bus-row" data-route="948A" data-dir="inbound"><span class="route-badge">948A</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                    <div class="bus-row" data-route="948B" data-dir="inbound"><span class="route-badge">948B</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                    <div class="bus-row" data-route="948X" data-dir="inbound"><span class="route-badge">948X</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                    <div class="bus-row" data-route="43M" data-dir="outbound"><span class="route-badge">43M</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                    <div class="bus-row" data-route="X42C" data-dir="outbound"><span class="route-badge">X42C</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                </div>
+            </div>
+
+            <div class="station-card variant-blue">
+                <div class="station-title">青華苑 — 往新界北/大嶼山/機場</div>
+                <div class="card-body p-0">
+                    <div class="bus-row" data-route="279X" data-dir="outbound"><span class="route-badge">279X</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                    <div class="bus-row" data-route="68A" data-dir="inbound"><span class="route-badge">68A</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                    <div class="bus-row" data-route="E42" data-dir="outbound"><span class="route-badge">E42</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                    <div class="bus-row" data-route="E31" data-dir="outbound"><span class="route-badge">E31</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                    <div class="bus-row" data-route="E32" data-dir="outbound"><span class="route-badge">E32</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                    <div class="bus-row" data-route="A32" data-dir="outbound"><span class="route-badge">A32</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                </div>
+            </div>
+
+            <div class="station-card variant-purple">
+                <div class="station-title">青華苑 — 往市區/沙田</div>
+                <div class="card-body p-0">
+                    <div class="bus-row" data-route="E42" data-dir="inbound"><span class="route-badge">E42</span><div class="eta-container"><small class="text-muted">Loading...</small></div></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -69,8 +111,7 @@
                     const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-eta/${route}/1`);
                     const json = await res.json();
                     
-                    // REMOVED: item.seq <= 6 filter. 
-                    // Now only checking if dir matches and eta exists.
+                    // Filter by Direction (dir) only - removing sequence limitations
                     const records = (json.data || []).filter(item => 
                         item.dir === dir && item.eta
                     );
