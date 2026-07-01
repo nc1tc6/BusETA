@@ -26,6 +26,7 @@
 
     <div class="container-fluid pb-5">
         
+        <!-- CARD 1: TY313 Shelter Group -->
         <div class="station-title">長康邨康順樓 (TY313) — 往九龍/沙田</div>
         <div class="shadow-sm">
             <div class="bus-row ty313-row" data-route="42A" data-dir="inbound">
@@ -50,10 +51,27 @@
             </div>
         </div>
 
-        <div class="station-title alt-shelter">長康邨康順樓 (TY340) — 往荃灣</div>
+        <!-- CARD 2: TY340 Shelter Group -->
+        <div class="station-title alt-shelter">長康邨康順樓 (TY340) — 往荃灣/九龍東/青衣</div>
         <div class="shadow-sm">
             <div class="bus-row ty340-row" data-route="243M" data-dir="outbound">
                 <span class="route-badge">243M</span>
+                <div class="eta-container">Loading...</div>
+            </div>
+            <div class="bus-row ty340-row" data-route="43B" data-dir="outbound">
+                <span class="route-badge">43B</span>
+                <div class="eta-container">Loading...</div>
+            </div>
+            <div class="bus-row ty340-row" data-route="249M" data-dir="outbound">
+                <span class="route-badge">249M</span>
+                <div class="eta-container">Loading...</div>
+            </div>
+            <div class="bus-row ty340-row" data-route="42C" data-dir="outbound">
+                <span class="route-badge">42C</span>
+                <div class="eta-container">Loading...</div>
+            </div>
+            <div class="bus-row ty340-row" data-route="241X" data-dir="outbound">
+                <span class="route-badge">241X</span>
                 <div class="eta-container">Loading...</div>
             </div>
         </div>
@@ -67,7 +85,6 @@
         });
 
         async function getETAs() {
-            // Target all data rows globally across both divs
             const rows = document.querySelectorAll(".bus-row");
             
             rows.forEach(async (row) => {
@@ -79,10 +96,9 @@
                     const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-eta/${route}/1`);
                     const json = await res.json();
                     
-                    // Filter matching entries depending on structural target location checks
                     const records = (json.data || []).filter(item => 
                         item.dir === dir && 
-                        (item.dest_tc_name === "長康邨康順樓" || item.dest_en_name?.includes("Hong Shun House") || item.seq === 2 || item.seq === 3 || item.seq === 4) &&
+                        (item.dest_tc_name === "長康邨康順樓" || item.dest_en_name?.includes("Hong Shun House") || item.seq === 2 || item.seq === 3 || item.seq === 4 || item.seq === 5) &&
                         item.eta
                     );
 
@@ -108,7 +124,6 @@
                                 </div>`;
                         });
                     } else {
-                        // Fallback handling to capture active line arrays if data strings alter
                         const fallbackRecords = (json.data || []).filter(item => item.eta).slice(0, 3);
                         if (fallbackRecords.length > 0) {
                             container.innerHTML = "";
