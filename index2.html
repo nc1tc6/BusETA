@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Bus Dashboard (Instant Dual ETA)</title>
+    <title>My Bus Dashboard (Pinpoint Dual ETA)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -35,21 +35,15 @@
         <div class="shadow-sm">
             <div class="bus-row" data-route="43C" data-stopid="852A062400">
                 <span class="route-badge">43C</span>
-                <div class="eta-container">
-                    <span class="badge bg-secondary badge-eta">Loading...</span>
-                </div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
             </div>
             <div class="bus-row" data-route="42A" data-stopid="852A062400">
                 <span class="route-badge">42A</span>
-                <div class="eta-container">
-                    <span class="badge bg-secondary badge-eta">Loading...</span>
-                </div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
             </div>
             <div class="bus-row" data-route="42C" data-stopid="852A062400">
                 <span class="route-badge">42C</span>
-                <div class="eta-container">
-                    <span class="badge bg-secondary badge-eta">Loading...</span>
-                </div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
             </div>
         </div>
 
@@ -60,21 +54,15 @@
         <div class="shadow-sm">
             <div class="bus-row" data-route="948" data-stopid="852A060400">
                 <span class="route-badge">948</span>
-                <div class="eta-container">
-                    <span class="badge bg-secondary badge-eta">Loading...</span>
-                </div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
             </div>
             <div class="bus-row" data-route="X42C" data-stopid="852A060400">
                 <span class="route-badge">X42C</span>
-                <div class="eta-container">
-                    <span class="badge bg-secondary badge-eta">Loading...</span>
-                </div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
             </div>
             <div class="bus-row" data-route="948A" data-stopid="852A060400">
                 <span class="route-badge">948A</span>
-                <div class="eta-container">
-                    <span class="badge bg-secondary badge-eta">Loading...</span>
-                </div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
             </div>
         </div>
 
@@ -85,33 +73,23 @@
         <div class="shadow-sm">
             <div class="bus-row" data-route="948B" data-stopid="852A062200">
                 <span class="route-badge">948B</span>
-                <div class="eta-container">
-                    <span class="badge bg-secondary badge-eta">Loading...</span>
-                </div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
             </div>
             <div class="bus-row" data-route="43B" data-stopid="852A062200">
                 <span class="route-badge">43B</span>
-                <div class="eta-container">
-                    <span class="badge bg-secondary badge-eta">Loading...</span>
-                </div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
             </div>
             <div class="bus-row" data-route="243M" data-stopid="852A062200">
                 <span class="route-badge">243M</span>
-                <div class="eta-container">
-                    <span class="badge bg-secondary badge-eta">Loading...</span>
-                </div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
             </div>
             <div class="bus-row" data-route="241X" data-stopid="852A062200">
                 <span class="route-badge">241X</span>
-                <div class="eta-container">
-                    <span class="badge bg-secondary badge-eta">Loading...</span>
-                </div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
             </div>
             <div class="bus-row" data-route="49A" data-stopid="852A062200">
                 <span class="route-badge">49A</span>
-                <div class="eta-container">
-                    <span class="badge bg-secondary badge-eta">Loading...</span>
-                </div>
+                <div class="eta-container"><span class="badge bg-secondary badge-eta">Loading...</span></div>
             </div>
         </div>
     </div>
@@ -121,7 +99,6 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             fetchAllETAs();
-            // Refreshes every 30 seconds smoothly
             setInterval(fetchAllETAs, 30000);
         });
 
@@ -140,18 +117,19 @@
 
         async function getLineArrivalDetails(route, stopId, containerNode) {
             try {
-                const response = await fetch(`${API_BASE}/stop-eta/${stopId}`);
-                const stopMasterLogs = await response.json();
+                // Using the specific pinpoint endpoint avoids mixed-up variant datasets
+                const response = await fetch(`${API_BASE}/eta/${stopId}/${route}/1`);
+                const etaResult = await response.json();
                 
-                // Get all valid ETAs for this route ordered by arrival sequence
-                const targetedLogs = (stopMasterLogs.data || [])
-                    .filter(item => item.route === route && item.eta)
+                // Filter out empty timestamps and match chronological sequencing patterns
+                const targetedLogs = (etaResult.data || [])
+                    .filter(item => item.eta)
                     .sort((a, b) => a.eta_seq - b.eta_seq);
 
                 if (targetedLogs.length > 0) {
-                    containerNode.innerHTML = ""; // Clear updating text
+                    containerNode.innerHTML = ""; 
 
-                    // Slice the top 2 upcoming buses
+                    // Slice out the top two incoming vehicles
                     const busesToShow = targetedLogs.slice(0, 2);
 
                     busesToShow.forEach((bus, index) => {
