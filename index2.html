@@ -109,6 +109,7 @@
 </head>
 <body>
 
+    <!-- Sleek Top Status Navigation Bar -->
     <nav class="navbar navbar-dark bg-dark shadow-sm">
         <div class="container-fluid px-4 d-flex justify-content-between align-items-center">
             <span class="navbar-brand mb-0 h1 font-monospace fw-bold">🗺️ Dashboard - KMB Bus ETA</span>
@@ -118,9 +119,11 @@
         </div>
     </nav>
 
+    <!-- Content Matrix Container -->
     <div class="container-fluid px-4">
         <div class="dashboard-grid">
             
+            <!-- CARD 1: TY313 -->
             <div class="station-card">
                 <div class="station-title">長康邨康順樓 (TY313) — 往九龍/沙田</div>
                 <div class="card-body p-0">
@@ -147,6 +150,7 @@
                 </div>
             </div>
 
+            <!-- CARD 2: TY340 -->
             <div class="station-card variant-alt">
                 <div class="station-title">長康邨康順樓 (TY340) — 往荃灣/將軍澳</div>
                 <div class="card-body p-0">
@@ -173,6 +177,7 @@
                 </div>
             </div>
 
+            <!-- CARD 3: 青盛苑 -->
             <div class="station-card variant-green">
                 <div class="station-title">青盛苑 (Ching Shing Court)</div>
                 <div class="card-body p-0">
@@ -203,6 +208,7 @@
                 </div>
             </div>
 
+            <!-- CARD 4: 青華苑 Northbound -->
             <div class="station-card variant-blue">
                 <div class="station-title">青華苑 — 往新界北/大嶼山/機場</div>
                 <div class="card-body p-0">
@@ -233,6 +239,7 @@
                 </div>
             </div>
 
+            <!-- CARD 5: 青華苑 Southbound -->
             <div class="station-card variant-purple">
                 <div class="station-title">青華苑 — 往市區/沙田</div>
                 <div class="card-body p-0">
@@ -264,22 +271,14 @@
                     const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-eta/${route}`);
                     const json = await res.json();
                     
-                    const records = (json.data || []).filter(item => 
-                        item.dir === dir && 
-                        item.eta && (
-                            item.dest_tc_name?.includes("康順樓") || 
-                            item.dest_tc_name?.includes("青盛苑") || 
-                            item.dest_tc_name?.includes("青華苑") ||
-                            item.dest_en_name?.includes("Hong Shun House") || 
-                            item.dest_en_name?.includes("Ching Shing Court") ||
-                            item.dest_en_name?.includes("Ching Wah Court")
-                        )
-                    );
+                    // Filter purely based on intended route direction and valid time presence
+                    const records = (json.data || []).filter(item => item.dir === dir && item.eta);
 
                     if (records.length > 0) {
                         container.innerHTML = "";
                         records.sort((a, b) => new Date(a.eta) - new Date(b.eta));
                         
+                        // Grab up to 3 upcoming arrivals running this specific route sequence direction
                         records.slice(0, 3).forEach((bus) => {
                             const timeDiff = Math.round((new Date(bus.eta) - new Date()) / 60000);
                             const clock = new Date(bus.eta).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -298,17 +297,7 @@
                                 </div>`;
                         });
                     } else {
-                        const fallbackRecords = (json.data || []).filter(item => item.dir === dir && item.eta).slice(0, 3);
-                        if (fallbackRecords.length > 0) {
-                            container.innerHTML = "";
-                            fallbackRecords.forEach(bus => {
-                                const timeDiff = Math.round((new Date(bus.eta) - new Date()) / 60000);
-                                const clock = new Date(bus.eta).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                                container.innerHTML += `<div class="eta-box status-far"><b>${timeDiff}m</b><span class="eta-time">${clock}</span></div>`;
-                            });
-                        } else {
-                            container.innerHTML = `<span class="text-muted small">No Service</span>`;
-                        }
+                        container.innerHTML = `<span class="text-muted small">No Service</span>`;
                     }
                 } catch (e) {
                     container.innerHTML = `<span class="text-danger small">Error</span>`;
