@@ -7,42 +7,68 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; max-width: 576px; margin: 0 auto; font-family: -apple-system, sans-serif; }
-        .eta-card { border-left: 5px solid #6c757d; }
-        .badge-eta { font-size: 0.95rem; min-width: 95px; text-align: center; padding: 6px 4px; }
+        /* Global Styling */
+        body { 
+            background-color: #f4f7f6; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Responsive Wrapper: Centers content on desktop, full-width on mobile */
+        .app-wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background-color: #ffffff;
+            box-shadow: 0 0 15px rgba(0,0,0,0.05);
+        }
+
+        /* Branding Colors */
+        .navbar { border-bottom: 4px solid #e31837; }
+        .btn-danger { background-color: #e31837; border-color: #e31837; }
+        .btn-outline-danger { color: #e31837; border-color: #e31837; }
+        .btn-outline-danger:hover { background-color: #e31837; color: #fff; }
+
+        /* Component Styling */
+        .eta-card { border-left: 5px solid #6c757d; transition: transform 0.1s; }
+        .badge-eta { font-size: 0.85rem; min-width: 95px; text-align: center; padding: 6px 4px; }
         .arrival-time { font-size: 0.7rem; display: block; opacity: 0.85; font-weight: normal; margin-top: 1px; }
         .dest-indicator { font-size: 0.65rem; display: block; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
+        
         .border-imminent { border-left-color: #dc3545 !important; }
         .border-soon { border-left-color: #ffc107 !important; }
         .border-normal { border-left-color: #198754 !important; }
+
+        @media (max-width: 380px) {
+            .badge-eta { font-size: 0.75rem; min-width: 75px; }
+        }
     </style>
 </head>
 <body>
 
-    <nav class="navbar navbar-dark bg-dark sticky-top shadow-sm">
-        <div class="container-fluid justify-content-center">
-            <span class="navbar-brand mb-0 h1"><i class="fa-solid fa-bus me-2 text-danger"></i>KMB ETA Tracker</span>
+    <div class="app-wrapper">
+        <nav class="navbar navbar-dark bg-dark sticky-top shadow-sm">
+            <div class="container-fluid justify-content-center">
+                <span class="navbar-brand mb-0 h1"><i class="fa-solid fa-bus me-2 text-danger"></i>KMB ETA Tracker</span>
+            </div>
+        </nav>
+
+        <div class="container py-3">
+            <div class="input-group mb-3 shadow-sm">
+                <input type="text" id="routeInput" class="form-control form-control-lg text-uppercase" placeholder="Enter Route (e.g., 87D)" aria-label="Bus Route">
+                <button class="btn btn-danger px-4" type="button" onclick="searchRoute()"><i class="fa-solid fa-magnifying-glass"></i></button>
+            </div>
+
+            <div id="directionBlock" class="d-grid gap-2 mb-3 d-none"></div>
+
+            <div id="loading" class="text-center py-5 d-none">
+                <div class="spinner-border text-danger" role="status"></div>
+                <p class="text-muted mt-2 small">Resolving transit configuration...</p>
+            </div>
+
+            <div id="stopList" class="list-group"></div>
         </div>
-    </nav>
-
-    <div class="container py-3">
-        <!-- Search Bar -->
-        <div class="input-group mb-3 shadow-sm">
-            <input type="text" id="routeInput" class="form-control form-control-lg text-uppercase" placeholder="Enter Route (e.g., 87D, 1A, 213M)" aria-label="Bus Route">
-            <button class="btn btn-danger px-4" type="button" onclick="searchRoute()"><i class="fa-solid fa-magnifying-glass"></i></button>
-        </div>
-
-        <!-- Direction Selection Buttons -->
-        <div id="directionBlock" class="d-grid gap-2 mb-3 d-none"></div>
-
-        <!-- Loader -->
-        <div id="loading" class="text-center py-5 d-none">
-            <div class="spinner-border text-danger" role="status"></div>
-            <p class="text-muted mt-2 small">Resolving transit configuration profiles...</p>
-        </div>
-
-        <!-- Stop Sequence List Area -->
-        <div id="stopList" class="list-group"></div>
     </div>
 
     <script>
@@ -56,48 +82,38 @@
 
             toggleElement('loading', true);
             clearDisplay();
-            document.getElementById('directionBlock').innerHTML = "";
-            document.getElementById('directionBlock').classList.add('d-none');
+            const directionContainer = document.getElementById('directionBlock');
+            directionContainer.innerHTML = "";
+            directionContainer.classList.add('d-none');
 
             try {
-                // FIX: Fetch the absolute master list list, then filter down to the matched route client-side
                 const routeMetaResp = await fetch(`${API_BASE}/route/`);
                 const allRoutesData = await routeMetaResp.json();
                 
-                if (!allRoutesData.data || allRoutesData.data.length === 0) {
-                    alert("Unable to fetch master route listing from government server.");
-                    return;
-                }
-
-                // Extract only the variants matching the typed route query (e.g., "87D")
                 availableVariants = allRoutesData.data.filter(item => item.route === activeRoute);
                 
                 if (availableVariants.length === 0) {
-                    alert("Route code invalid or not registered in KMB Open Data profile.");
+                    alert("Route not found.");
                     toggleElement('loading', false);
                     return;
                 }
 
-                // 2. Generate destination buttons cleanly from our filtered results
-                const directionContainer = document.getElementById('directionBlock');
                 availableVariants.forEach((variant, index) => {
                     const btn = document.createElement('button');
                     btn.type = "button";
                     btn.id = `dirBtn-${index}`;
                     btn.className = `btn btn-${index === 0 ? 'danger' : 'outline-danger'} text-start py-2 px-3 shadow-sm`;
                     btn.onclick = () => loadRouteVariant(index);
-                    btn.innerHTML = `<i class="fa-solid fa-circle-arrow-right me-2"></i>往 ${variant.dest_tc} <small class="text-muted">(${variant.orig_tc} 起點)</small>`;
+                    btn.innerHTML = `<i class="fa-solid fa-circle-arrow-right me-2"></i>往 ${variant.dest_tc} <small>(${variant.orig_tc} 起點)</small>`;
                     directionContainer.appendChild(btn);
                 });
 
-                document.getElementById('directionBlock').classList.remove('d-none');
-                
-                // Automatically display the first discovered route variant path right away
+                directionContainer.classList.remove('d-none');
                 await loadRouteVariant(0);
 
             } catch (err) {
                 console.error(err);
-                alert("Network communication loss when parsing API signatures.");
+                alert("Network communication error.");
             } finally {
                 toggleElement('loading', false);
             }
@@ -113,7 +129,6 @@
             });
 
             const targetVariant = availableVariants[index];
-            
             const urlDirectionParam = (targetVariant.bound === 'O') ? 'outbound' : 'inbound';
             const urlServiceTypeParam = targetVariant.service_type || '1';
 
@@ -121,15 +136,11 @@
                 const stopSequenceResp = await fetch(`${API_BASE}/route-stop/${activeRoute}/${urlDirectionParam}/${urlServiceTypeParam}`);
                 const stopSequenceData = await stopSequenceResp.json();
 
-                if (!stopSequenceData.data || stopSequenceData.data.length === 0) {
-                    document.getElementById('stopList').innerHTML = `<div class="alert alert-warning">Could not resolve sequence mapping details for this direction profile.</div>`;
-                    return;
-                }
+                if (!stopSequenceData.data || stopSequenceData.data.length === 0) return;
 
                 await renderStops(stopSequenceData.data, targetVariant);
             } catch (err) {
                 console.error(err);
-                alert("Error rendering selected stop sequences.");
             } finally {
                 toggleElement('loading', false);
             }
@@ -137,90 +148,49 @@
 
         async function renderStops(stops, variantMeta) {
             const listContainer = document.getElementById('stopList');
-            listContainer.innerHTML = "";
-
             for (const stop of stops) {
                 const stopDetailResp = await fetch(`${API_BASE}/stop/${stop.stop}`);
                 const stopDetail = await stopDetailResp.json();
-                const stopName = stopDetail.data.name_tc || "Unknown Station Point";
+                const stopName = stopDetail.data.name_tc || "Station Point";
 
                 const card = document.createElement('div');
                 card.id = `card-${stop.stop}`;
-                card.className = "list-group-item list-group-item-action d-flex justify-content-between align-items-center mb-2 rounded eta-card p-3 shadow-sm";
+                card.className = "list-group-item d-flex justify-content-between align-items-center mb-2 rounded eta-card p-3 shadow-sm";
                 card.innerHTML = `
                     <div>
-                        <small class="text-muted d-block font-monospace">SEQ ${stop.seq} • <span>往 ${variantMeta.dest_tc}</span></small>
-                        <strong class="fs-5">${stopName}</strong>
+                        <small class="text-muted d-block font-monospace">SEQ ${stop.seq}</small>
+                        <strong class="fs-6">${stopName}</strong>
                     </div>
-                    <span class="badge bg-secondary badge-eta" id="eta-${stop.stop}">
-                        Loading...
-                    </span>
+                    <span class="badge bg-secondary badge-eta" id="eta-${stop.stop}">Loading...</span>
                 `;
                 listContainer.appendChild(card);
-
                 fetchLiveETA(stop.stop, card.querySelector(`#eta-${stop.stop}`), card, variantMeta);
             }
         }
 
         async function fetchLiveETA(stopId, elementNode, cardNode, variantMeta) {
             try {
-                const serviceTypeParam = variantMeta.service_type || '1';
-                const response = await fetch(`${API_BASE}/eta/${stopId}/${activeRoute}/${serviceTypeParam}`);
+                const response = await fetch(`${API_BASE}/eta/${stopId}/${activeRoute}/${variantMeta.service_type || '1'}`);
                 const etaResult = await response.json();
-                
                 const relevantEtas = etaResult.data.filter(item => item.dir === variantMeta.bound);
 
                 if (relevantEtas.length > 0 && relevantEtas[0].eta) {
                     const etaTime = new Date(relevantEtas[0].eta);
-                    const diffMs = etaTime - new Date();
-                    const minutesLeft = Math.round(diffMs / 60000);
-                    const formattedClockTime = etaTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    const minutesLeft = Math.round((etaTime - new Date()) / 60000);
+                    const timeStr = minutesLeft < 0 ? "Departed" : (minutesLeft === 0 ? "Arriving" : minutesLeft + " min");
                     
-                    const specificDest = relevantEtas[0].dest_tc || variantMeta.dest_tc; 
-
-                    let timeDisplayStr = "";
-                    let targetLabel = `<span class="dest-indicator">往 ${specificDest}</span>`;
-                    
-                    if (minutesLeft < 0) {
-                        timeDisplayStr = `${targetLabel}Departed<span class="arrival-time">${formattedClockTime}</span>`;
-                        elementNode.className = "badge bg-dark badge-eta";
-                    } else if (minutesLeft === 0) {
-                        timeDisplayStr = `${targetLabel}Arriving<span class="arrival-time">${formattedClockTime}</span>`;
-                        elementNode.className = "badge bg-danger badge-eta";
-                        cardNode.classList.add('border-imminent');
-                    } else {
-                        timeDisplayStr = `${targetLabel}${minutesLeft} min<span class="arrival-time">${formattedClockTime}</span>`;
-                        
-                        if (minutesLeft <= 3) {
-                            elementNode.className = "badge bg-danger badge-eta";
-                            cardNode.classList.add('border-imminent');
-                        } else if (minutesLeft <= 8) {
-                            elementNode.className = "badge bg-warning text-dark badge-eta";
-                            cardNode.classList.add('border-soon');
-                        } else {
-                            elementNode.className = "badge bg-success badge-eta";
-                            cardNode.classList.add('border-normal');
-                        }
-                    }
-
-                    elementNode.innerHTML = timeDisplayStr;
+                    elementNode.className = `badge ${minutesLeft <= 3 ? 'bg-danger' : (minutesLeft <= 8 ? 'bg-warning text-dark' : 'bg-success')} badge-eta`;
+                    if (minutesLeft <= 3) cardNode.classList.add('border-imminent');
+                    elementNode.innerHTML = `${timeStr}<span class="arrival-time">${etaTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>`;
                 } else {
-                    elementNode.innerText = "No Service";
+                    elementNode.innerText = "No Data";
                     elementNode.className = "badge bg-light text-muted border badge-eta";
                 }
-            } catch (e) {
-                elementNode.innerText = "Error";
-                elementNode.className = "badge bg-secondary badge-eta";
-            }
+            } catch (e) { elementNode.innerText = "Error"; }
         }
 
-        function toggleElement(id, show) {
-            document.getElementById(id).classList.toggle('d-none', !show);
-        }
-
-        function clearDisplay() {
-            document.getElementById('stopList').innerHTML = "";
-        }
+        function toggleElement(id, show) { document.getElementById(id).classList.toggle('d-none', !show); }
+        function clearDisplay() { document.getElementById('stopList').innerHTML = ""; }
     </script>
 </body>
 </html>
