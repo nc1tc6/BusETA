@@ -9,6 +9,7 @@
         body { background-color: #f4f6f9; max-width: 540px; margin: 0 auto; font-family: -apple-system, sans-serif; }
         .station-title { background: #333; color: #fff; padding: 10px 15px; font-weight: bold; margin-top: 25px; border-radius: 6px 6px 0 0; }
         .station-title.alt-shelter { background: #5c636a; }
+        .station-title.chingshing-shelter { background: #198754; }
         .bus-row { background: #fff; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
         .bus-row:last-child { border-bottom: none; border-radius: 0 0 6px 6px; }
         .route-badge { font-size: 1.3rem; font-weight: bold; color: #d9534f; min-width: 75px; }
@@ -29,23 +30,23 @@
         <!-- CARD 1: TY313 Shelter Group -->
         <div class="station-title">長康邨康順樓 (TY313) — 往九龍/沙田</div>
         <div class="shadow-sm">
-            <div class="bus-row ty313-row" data-route="42A" data-dir="inbound">
+            <div class="bus-row" data-route="42A" data-dir="inbound">
                 <span class="route-badge">42A</span>
                 <div class="eta-container">Loading...</div>
             </div>
-            <div class="bus-row ty313-row" data-route="43A" data-dir="inbound">
+            <div class="bus-row" data-route="43A" data-dir="inbound">
                 <span class="route-badge">43A</span>
                 <div class="eta-container">Loading...</div>
             </div>
-            <div class="bus-row ty313-row" data-route="249X" data-dir="outbound">
+            <div class="bus-row" data-route="249X" data-dir="outbound">
                 <span class="route-badge">249X</span>
                 <div class="eta-container">Loading...</div>
             </div>
-            <div class="bus-row ty313-row" data-route="242X" data-dir="inbound">
+            <div class="bus-row" data-route="242X" data-dir="inbound">
                 <span class="route-badge">242X</span>
                 <div class="eta-container">Loading...</div>
             </div>
-            <div class="bus-row ty313-row" data-route="42" data-dir="inbound">
+            <div class="bus-row" data-route="42" data-dir="inbound">
                 <span class="route-badge">42</span>
                 <div class="eta-container">Loading...</div>
             </div>
@@ -54,24 +55,53 @@
         <!-- CARD 2: TY340 Shelter Group -->
         <div class="station-title alt-shelter">長康邨康順樓 (TY340) — 往荃灣/九龍東/青衣</div>
         <div class="shadow-sm">
-            <div class="bus-row ty340-row" data-route="243M" data-dir="outbound">
+            <div class="bus-row" data-route="243M" data-dir="outbound">
                 <span class="route-badge">243M</span>
                 <div class="eta-container">Loading...</div>
             </div>
-            <div class="bus-row ty340-row" data-route="43B" data-dir="outbound">
+            <div class="bus-row" data-route="43B" data-dir="outbound">
                 <span class="route-badge">43B</span>
                 <div class="eta-container">Loading...</div>
             </div>
-            <div class="bus-row ty340-row" data-route="249M" data-dir="outbound">
+            <div class="bus-row" data-route="249M" data-dir="outbound">
                 <span class="route-badge">249M</span>
                 <div class="eta-container">Loading...</div>
             </div>
-            <div class="bus-row ty340-row" data-route="42C" data-dir="outbound">
+            <div class="bus-row" data-route="42C" data-dir="outbound">
                 <span class="route-badge">42C</span>
                 <div class="eta-container">Loading...</div>
             </div>
-            <div class="bus-row ty340-row" data-route="241X" data-dir="outbound">
+            <div class="bus-row" data-route="241X" data-dir="outbound">
                 <span class="route-badge">241X</span>
+                <div class="eta-container">Loading...</div>
+            </div>
+        </div>
+
+        <!-- CARD 3: Ching Shing Court Shelter Group -->
+        <div class="station-title chingshing-shelter">青盛苑 (Ching Shing Court)</div>
+        <div class="shadow-sm">
+            <div class="bus-row" data-route="948" data-dir="inbound">
+                <span class="route-badge">948</span>
+                <div class="eta-container">Loading...</div>
+            </div>
+            <div class="bus-row" data-route="948A" data-dir="inbound">
+                <span class="route-badge">948A</span>
+                <div class="eta-container">Loading...</div>
+            </div>
+            <div class="bus-row" data-route="948B" data-dir="inbound">
+                <span class="route-badge">948B</span>
+                <div class="eta-container">Loading...</div>
+            </div>
+            <div class="bus-row" data-route="948X" data-dir="inbound">
+                <span class="route-badge">948X</span>
+                <div class="eta-container">Loading...</div>
+            </div>
+            <div class="bus-row" data-route="43M" data-dir="outbound">
+                <span class="route-badge">43M</span>
+                <div class="eta-container">Loading...</div>
+            </div>
+            <div class="bus-row" data-route="X42C" data-dir="outbound">
+                <span class="route-badge">X42C</span>
                 <div class="eta-container">Loading...</div>
             </div>
         </div>
@@ -81,7 +111,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             getETAs();
-            setInterval(getETAs, 30000); // 30s background sync
+            setInterval(getETAs, 30000); // 30-second automated refresh
         });
 
         async function getETAs() {
@@ -96,9 +126,14 @@
                     const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-eta/${route}/1`);
                     const json = await res.json();
                     
+                    // Filter matching arrays sequence parsing parameters safely
                     const records = (json.data || []).filter(item => 
                         item.dir === dir && 
-                        (item.dest_tc_name === "長康邨康順樓" || item.dest_en_name?.includes("Hong Shun House") || item.seq === 2 || item.seq === 3 || item.seq === 4 || item.seq === 5) &&
+                        (item.dest_tc_name === "長康邨康順樓" || 
+                         item.dest_tc_name === "青盛苑" || 
+                         item.dest_en_name?.includes("Hong Shun House") || 
+                         item.dest_en_name?.includes("Ching Shing Court") ||
+                         item.seq <= 6) &&
                         item.eta
                     );
 
