@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal HK Bus ETA</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; background: #f5f5f7; }
+        .eta-card { background: white; padding: 15px; border-radius: 12px; margin-top: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .time { font-size: 24px; font-weight: bold; color: #007aff; }
+    </style>
+</head>
+<body>
+    <h2>无广告九巴 ETA</h2>
+    <input type="text" id="routeInput" placeholder="Enter Route (e.g., 87D)" value="87D">
+    <button onclick="getBusETA()">Check ETA</button>
+
+    <div id="results" class="eta-card" style="display:none;">
+        <h3>Route: <span id="routeTitle">--</span></h3>
+        <p>Next Bus in: <br><span class="time" id="etaTime">Loading...</span></p>
+    </div>
+
+    <script>
+        async function getBusETA() {
+            const route = document.getElementById('routeInput').value.toUpperCase();
+            document.getElementById('results').style.display = 'block';
+            
+            try {
+                // In a full app, you would map a stop ID first. 
+                // For this example, we fetch the generic route ETA directly.
+                const response = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-eta/${route}/1`);
+                const data = await response.json();
+                
+                if(data.data && data.data.length > 0) {
+                    const nextBus = data.data[0];
+                    // Convert the timestamp to minutes remaining
+                    const etaDate = new Date(nextBus.eta);
+                    const minutesLeft = Math.max(0, Math.round((etaDate - new Date()) / 60000));
+                    
+                    document.getElementById('routeTitle').innerText = route;
+                    document.getElementById('etaTime').innerText = `${minutesLeft} mins (${etaDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})`;
+                } else {
+                    document.getElementById('etaTime').innerText = "No upcoming buses found.";
+                }
+            } catch (error) {
+                document.getElementById('etaTime').innerText = "Error fetching data.";
+            }
+        }
+    </script>
+</body>
+</html>
