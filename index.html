@@ -3,48 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minimal HK Bus ETA</title>
+    <title>HK Bus Tracker (KMB Alternative)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: -apple-system, sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; background: #f5f5f7; }
-        .eta-card { background: white; padding: 15px; border-radius: 12px; margin-top: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .time { font-size: 24px; font-weight: bold; color: #007aff; }
+        body { background-color: #f8f9fa; max-width: 576px; margin: 0 auto; font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .eta-card { border-left: 5px solid #6c757d; transition: transform 0.15s ease; }
+        .eta-card:active { transform: scale(0.98); }
+        .badge-eta { font-size: 1rem; min-width: 90px; text-align: center; padding: 8px 4px; }
+        .arrival-time { font-size: 0.75rem; display: block; opacity: 0.85; font-weight: normal; margin-top: 2px; }
+        .border-imminent { border-left-color: #dc3545 !important; }
+        .border-soon { border-left-color: #ffc107 !important; }
+        .border-normal { border-left-color: #198754 !important; }
     </style>
 </head>
 <body>
-    <h2>无广告九巴 ETA</h2>
-    <input type="text" id="routeInput" placeholder="Enter Route (e.g., 87D)" value="87D">
-    <button onclick="getBusETA()">Check ETA</button>
 
-    <div id="results" class="eta-card" style="display:none;">
-        <h3>Route: <span id="routeTitle">--</span></h3>
-        <p>Next Bus in: <br><span class="time" id="etaTime">Loading...</span></p>
+    <nav class="navbar navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container-fluid justify-content-center">
+            <span class="navbar-brand mb-0 h1"><i class="fa-solid fa-bus me-2 text-danger"></i> Pure KMB Live ETA</span>
+        </div>
+    </nav>
+
+    <div class="container py-3">
+        <div class="input-group mb-3 shadow-sm">
+            <input type="text" id="routeInput" class="form-control form-control-lg text-uppercase" placeholder="Enter Route (e.g., 87D, 1A)" aria-label="Bus Route">
+            <button class="btn btn-danger px-4" type="button" onclick="searchRoute()"><i class="fa-solid fa-magnifying-glass"></i></button>
+        </div>
+
+        <div id="directionBlock" class="btn-group w-100 mb-3 shadow-sm d-none" role="group">
+            <button type="button" id="dirOutbound" class="btn btn-danger btn-sm py-2" onclick="switchDirection('outbound')">Outbound</button>
+            <button type="button" id="dirInbound" class="btn btn-outline-danger btn-sm py-2" onclick="switchDirection('inbound')">Inbound</button>
+        </div>
+
+        <div id="loading" class="text-center py-5 d-none">
+            <div class="spinner-border text-danger" role="status"></div>
+            <p class="text-muted mt-2 small">Mapping transit network configurations...</p>
+        </div>
+
+        <div id="stopList" class="list-group"></div>
     </div>
 
     <script>
-        async function getBusETA() {
-            const route = document.getElementById('routeInput').value.toUpperCase();
-            document.getElementById('results').style.display = 'block';
-            
+        const API_BASE = "https://data.etabus.gov.hk/v1/transport/kmb";
+        let currentRouteData = [];
+        let currentDirection = "outbound"; 
+        let activeRoute = "";
+
+        // Entry point: Resolves route validity and pulls structure data
+        async function searchRoute() {
+            activeRoute = document.getElementById('routeInput').value.trim().toUpperCase();
+            if (!activeRoute) return;
+
+            toggleElement('loading', true);
+            clearDisplay();
+
             try {
-                // In a full app, you would map a stop ID first. 
-                // For this example, we fetch the generic route ETA directly.
-                const response = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-eta/${route}/1`);
-                const data = await response.json();
+                // Fetch the core structural stop layouts for this route profile
+                const response = await fetch(`${API_BASE}/route-stop/${activeRoute}/outbound`);
+                const stopData = await response.json();
                 
-                if(data.data && data.data.length > 0) {
-                    const nextBus = data.data[0];
-                    // Convert the timestamp to minutes remaining
-                    const etaDate = new Date(nextBus.eta);
-                    const minutesLeft = Math.max(0, Math.round((etaDate - new Date()) / 60000));
-                    
-                    document.getElementById('routeTitle').innerText = route;
-                    document.getElementById('etaTime').innerText = `${minutesLeft} mins (${etaDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})`;
-                } else {
-                    document.getElementById('etaTime').innerText = "No upcoming buses found.";
+                if (!stopData.data || stopData.data.length === 0) {
+                    alert("Route configuration data could not be resolved. Verify input format.");
+                    toggleElement('loading', false);
+                    return;
                 }
-            } catch (error) {
-                document.getElementById('etaTime').innerText = "Error fetching data.";
+
+                currentRouteData = stopData.data;
+                
+                // Construct the active physical stop DOM elements
+                await renderStops();
+                toggleElement('directionBlock', true);
+            } catch (err) {
+                console.error(err);
+                alert("Network communication error accessing Open Data API gateways.");
+            } finally {
+                toggleElement('loading', false);
             }
+        }
+
+        // Resolves stop names locally and handles layout generation loop
+        async function renderStops() {
+            const listContainer = document.getElementById('stopList');
+            listContainer.innerHTML = "";
+
+            // Isolating sequence definitions against active runtime filter variables
+            const stopsToRender = currentRouteData.filter(item => item.dir === currentDirection);
+
+            for (const stop of stopsToRender) {
+                // Resolving unique localized strings mapped via core Stop ID definitions
+                const stopDetailResp = await fetch(`${API_BASE}/stop/${stop.stop}`);
+                const stopDetail = await stopDetailResp.json();
+                const stopName = stopDetail.data.name_tc || "Undefined Stop Segment";
+
+                // Generate individual structural components
+                const card = document.createElement('div');
+                card.id = `card-${stop.stop}`;
+                card.className = "list-group-item list-group-item-action d-flex justify-content-between align-items-center mb-2 rounded eta-card p-3 shadow-sm";
+                card.innerHTML = `
+                    <div>
+                        <small class="text-muted d-block font-monospace">SEQ ${stop.seq}</small>
+                        <strong class="fs-5">${stopName}</strong>
+                    </div>
+                    <span class="badge bg-secondary badge-eta" id="eta-${stop.stop}">
+                        Calculating...
+                    </span>
+                `;
+                listContainer.appendChild(card);
+
+                // Dispatches isolated asynchronous background fetches directly down to the DOM token
+                fetchLiveETA(stop.stop, card.querySelector(`#eta-${stop.stop}`), card);
+            }
+        }
+
+        // Fetches real time updates for individual stop endpoints asynchronously
+        async function fetchLiveETA(stopId, elementNode, cardNode) {
+            try {
+                const response = await fetch(`${API_BASE}/eta/${stopId}/${activeRoute}/1`);
+                const etaResult = await response.json();
+                
+                // Parse standard API direction signatures ('O' / 'I') against browser variable formats
+                const targetDirectionSig = currentDirection === 'outbound' ? 'O' : 'I';
+                const relevantEtas = etaResult.data.filter(item => item.dir === targetDirectionSig);
+
+                if (relevantEtas.length > 0 && relevantEtas[0].eta) {
+                    const etaTime = new Date(relevantEtas[0].eta);
+                    const diffMs = etaTime - new Date();
+                    const minutesLeft = Math.round(diffMs / 60000);
+                    const formattedClockTime = etaTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                    let timeDisplayStr = "";
+                    
+                    // State determination algorithm based on absolute delta variables
+                    if (minutesLeft < 0) {
+                        timeDisplayStr = `Departed<span class="arrival-time">${formattedClockTime}</span>`;
+                        elementNode.className = "badge bg-dark badge-eta";
+                    } else if (minutesLeft === 0) {
+                        timeDisplayStr = `Arriving<span class="arrival-time">${formattedClockTime}</span>`;
+                        elementNode.className = "badge bg-danger badge-eta";
+                        cardNode.classList.add('border-imminent');
+                    } else {
+                        timeDisplayStr = `${minutesLeft} min<span class="arrival-time">${formattedClockTime}</span>`;
+                        
+                        // Dynamically update context border themes depending on remaining delta ranges
+                        if (minutesLeft <= 3) {
+                            elementNode.className = "badge bg-danger badge-eta";
+                            cardNode.classList.add('border-imminent');
+                        } else if (minutesLeft <= 8) {
+                            elementNode.className = "badge bg-warning text-dark badge-eta";
+                            cardNode.classList.add('border-soon');
+                        } else {
+                            elementNode.className = "badge bg-success badge-eta";
+                            cardNode.classList.add('border-normal');
+                        }
+                    }
+
+                    elementNode.innerHTML = timeDisplayStr;
+                } else {
+                    elementNode.innerText = "No Service";
+                    elementNode.className = "badge bg-light text-muted border badge-eta";
+                }
+            } catch (e) {
+                elementNode.innerText = "Error";
+                elementNode.className = "badge bg-secondary badge-eta";
+            }
+        }
+
+        function switchDirection(dir) {
+            currentDirection = dir;
+            document.getElementById('dirOutbound').className = `btn btn-${dir === 'outbound' ? 'danger' : 'outline-danger'} btn-sm py-2`;
+            document.getElementById('dirInbound').className = `btn btn-${dir === 'inbound' ? 'danger' : 'outline-danger'} btn-sm py-2`;
+            renderStops();
+        }
+
+        function toggleElement(id, show) {
+            document.getElementById(id).classList.toggle('d-none', !show);
+        }
+
+        function clearDisplay() {
+            document.getElementById('stopList').innerHTML = "";
         }
     </script>
 </body>
