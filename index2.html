@@ -2,60 +2,82 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>KMB Live Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KMB Live Tracker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: #f8f9fa; font-family: sans-serif; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; padding: 20px; }
-        .card { border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 15px; background: white; }
-        .row-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
-        .eta-box { font-weight: bold; color: #d63384; }
+        body { background-color: #f4f6f9; font-family: sans-serif; max-width: 500px; margin: 20px auto; }
+        .card { border-radius: 12px; margin-bottom: 10px; border: none; }
+        .eta-text { font-size: 1.25rem; font-weight: bold; color: #dc3545; }
     </style>
 </head>
 <body>
 
-<div class="grid" id="dashboard">
-    <div class="card">
-        <h5>長康邨康順樓</h5>
-        <div class="row-item" data-stop="7B2F696431303236" data-route="42A">
-            <span>42A</span> <span class="eta">Loading...</span>
-        </div>
-        <div class="row-item" data-stop="7B2F696431303236" data-route="43A">
-            <span>43A</span> <span class="eta">Loading...</span>
-        </div>
-    </div>
+<div class="container">
+    <h4 class="text-center mb-4">Live Bus ETAs</h4>
+    <div id="stopList"></div>
 </div>
 
 <script>
-    async function updateETAs() {
-        const rows = document.querySelectorAll(".row-item");
-        for (let row of rows) {
-            const stopId = row.getAttribute("data-stop");
-            const route = row.getAttribute("data-route");
-            const display = row.querySelector(".eta");
+    const API_BASE = "https://data.etabus.gov.hk/v1/transport/kmb";
+    
+    // Your defined routes and directions
+    const myRoutes = [
+        { route: "249X", stopName: "長康邨康順樓", bound: "I" },
+        { route: "279X", stopName: "青華苑", bound: "I" },
+        { route: "E42", stopName: "青華苑", bound: "I" },
+        { route: "E42", stopName: "青華苑", bound: "O" },
+        { route: "E31", stopName: "青華苑", bound: "I" }
+    ];
 
-            try {
-                // Fetching from the official Stop-ETA endpoint
-                const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stopId}`);
-                const json = await res.json();
-                
-                // Find the specific route in the returned list
-                const bus = (json.data || []).find(b => b.route === route && b.eta);
-                
-                if (bus) {
-                    const mins = Math.round((new Date(bus.eta) - new Date()) / 60000);
-                    display.innerHTML = `<span class="eta-box">${mins <= 0 ? "Arriving" : mins + "m"}</span>`;
-                } else {
-                    display.innerHTML = "No Service";
-                }
-            } catch (e) {
-                display.innerHTML = "Error";
-            }
+    async function initDashboard() {
+        const listContainer = document.getElementById('stopList');
+        
+        for (const item of myRoutes) {
+            const card = document.createElement('div');
+            card.className = "card p-3 shadow-sm";
+            card.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong class="fs-5">${item.route}</strong> <small class="text-muted">(${item.bound === 'I' ? 'Inbound' : 'Outbound'})</small>
+                        <div class="small">${item.stopName}</div>
+                    </div>
+                    <div class="eta-text" id="eta-${item.route}-${item.bound}">Loading...</div>
+                </div>
+            `;
+            listContainer.appendChild(card);
+            fetchAndDisplay(item, card.querySelector('.eta-text'));
         }
     }
 
-    updateETAs();
-    setInterval(updateETAs, 30000); // Auto-refresh every 30 seconds
+    async function fetchAndDisplay(item, element) {
+        try {
+            // 1. Get Stop ID dynamically
+            const res = await fetch(`${API_BASE}/route-stop/${item.route}/${item.bound === 'I' ? 'inbound' : 'outbound'}/1`);
+            const data = await res.json();
+            const stopMatch = data.data.find(s => s.name_tc === item.stopName);
+            
+            if (!stopMatch) { element.innerText = "N/A"; return; }
+
+            // 2. Get ETA
+            const etaRes = await fetch(`${API_BASE}/stop-eta/${stopMatch.stop}`);
+            const etaData = await etaRes.json();
+            const bus = etaData.data.find(b => b.route === item.route && b.dir === item.bound);
+
+            if (bus && bus.eta) {
+                const mins = Math.max(0, Math.round((new Date(bus.eta) - new Date()) / 60000));
+                element.innerHTML = `${mins} min`;
+            } else {
+                element.innerHTML = "No Service";
+            }
+        } catch (e) {
+            element.innerHTML = "Error";
+        }
+    }
+
+    initDashboard();
+    // Auto-refresh every 60 seconds
+    setInterval(initDashboard, 60000);
 </script>
 </body>
 </html>
