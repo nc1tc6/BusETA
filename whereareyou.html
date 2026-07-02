@@ -1,62 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Nearby Bus Stop Finder</title>
-    <style>
-        body { font-family: sans-serif; padding: 20px; }
-        #status { color: #555; }
-        .stop-card { border: 1px solid #ccc; padding: 10px; margin: 10px 0; border-radius: 8px; }
-    </style>
-</head>
+<html>
 <body>
-    <h1>Nearby Bus Stops</h1>
-    <div id="status">Getting your location...</div>
-    <div id="results"></div>
+    <h1>Dynamic Live Bus Stops</h1>
+    <div id="results">Loading live data...</div>
 
     <script>
-        // 1. A small sample database of bus stops in Sham Shui Po
-        const busStops = [
-            { name: "Tonkin Street", lat: 22.3297, lon: 114.1565 },
-            { name: "Fuk Wing Street", lat: 22.3312, lon: 114.1580 },
-            { name: "Yen Chow Street", lat: 22.3305, lon: 114.1601 }
-        ];
+        const resultsDiv = document.getElementById("results");
 
-        // 2. Haversine formula to calculate distance in km
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2)**2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        // 1. Function to get live data from an external source
+        async function fetchBusStops() {
+            try {
+                // Example: A publicly accessible endpoint for bus stops
+                const response = await fetch('https://api.example-hk-transport.com/stops'); 
+                return await response.json(); 
+            } catch (error) {
+                console.error("Data error", error);
+                return [];
+            }
         }
 
-        // 3. Watch user position
-        if ("geolocation" in navigator) {
-            navigator.geolocation.watchPosition((position) => {
-                const myLat = position.coords.latitude;
-                const myLon = position.coords.longitude;
-                document.getElementById("status").textContent = `Current Loc: ${myLat.toFixed(4)}, ${myLon.toFixed(4)}`;
-                
-                const resultsDiv = document.getElementById("results");
-                resultsDiv.innerHTML = ""; // Clear old results
-
-                // 4. Find stops within 0.5km
-                busStops.forEach(stop => {
-                    const dist = getDistance(myLat, myLon, stop.lat, stop.lon);
-                    if (dist < 0.5) {
-                        const div = document.createElement("div");
-                        div.className = "stop-card";
-                        div.innerHTML = `<strong>${stop.name}</strong><br>Distance: ${(dist * 1000).toFixed(0)} meters away`;
-                        resultsDiv.appendChild(div);
-                    }
-                });
-            }, (err) => {
-                document.getElementById("status").textContent = "Error: " + err.message;
-            }, { enableHighAccuracy: true });
-        } else {
-            document.getElementById("status").textContent = "Geolocation not supported.";
-        }
+        // 2. Watch position and filter dynamic list
+        navigator.geolocation.watchPosition(async (pos) => {
+            const { latitude, longitude } = pos.coords;
+            const allStops = await fetchBusStops(); // Fetch new list every time
+            
+            resultsDiv.innerHTML = ""; 
+            
+            allStops.forEach(stop => {
+                // ... perform the same distance calculation ...
+                if (getDistance(latitude, longitude, stop.lat, stop.lon) < 0.5) {
+                    const el = document.createElement("div");
+                    el.innerText = stop.name;
+                    resultsDiv.appendChild(el);
+                }
+            });
+        });
     </script>
 </body>
 </html>
