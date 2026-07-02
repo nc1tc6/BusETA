@@ -1,39 +1,56 @@
 <!DOCTYPE html>
 <html>
+<head>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        #log { background: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px; font-size: 0.8em; }
+    </style>
+</head>
 <body>
-    <h1>Dynamic Live Bus Stops</h1>
-    <div id="results">Loading live data...</div>
+    <h1>Bus Stops (5-Min Walk)</h1>
+    <div id="log">Status: Initializing...</div>
+    <div id="results"></div>
 
     <script>
-        const resultsDiv = document.getElementById("results");
+        const logEl = document.getElementById("log");
+        const resultsEl = document.getElementById("results");
 
-        // 1. Function to get live data from an external source
-        async function fetchBusStops() {
+        // Helper: Calculate distance in KM
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        async function findNearbyStops(lat, lon) {
+            logEl.textContent = "Fetching live bus data...";
             try {
-                // Example: A publicly accessible endpoint for bus stops
-                const response = await fetch('https://api.example-hk-transport.com/stops'); 
-                return await response.json(); 
-            } catch (error) {
-                console.error("Data error", error);
-                return [];
+                // NOTE: Replace this with an actual API endpoint from data.gov.hk
+                const response = await fetch('https://api.example-transit-data.json'); 
+                const stops = await response.json(); 
+
+                resultsEl.innerHTML = "";
+                let found = 0;
+
+                stops.forEach(stop => {
+                    const dist = getDistance(lat, lon, stop.lat, stop.lon);
+                    // 0.4km is roughly a 5-minute walk
+                    if (dist <= 0.4) {
+                        resultsEl.innerHTML += `<p>📍 <strong>${stop.name}</strong> - ~${(dist*1000).toFixed(0)}m away</p>`;
+                        found++;
+                    }
+                });
+
+                logEl.textContent = found > 0 ? `Found ${found} stops within 5 mins.` : "No stops within 5 min walk.";
+            } catch (e) {
+                logEl.textContent = "Error: Could not load data. Check API/CORS.";
             }
         }
 
-        // 2. Watch position and filter dynamic list
-        navigator.geolocation.watchPosition(async (pos) => {
-            const { latitude, longitude } = pos.coords;
-            const allStops = await fetchBusStops(); // Fetch new list every time
-            
-            resultsDiv.innerHTML = ""; 
-            
-            allStops.forEach(stop => {
-                // ... perform the same distance calculation ...
-                if (getDistance(latitude, longitude, stop.lat, stop.lon) < 0.5) {
-                    const el = document.createElement("div");
-                    el.innerText = stop.name;
-                    resultsDiv.appendChild(el);
-                }
-            });
+        navigator.geolocation.getCurrentPosition(pos => {
+            findNearbyStops(pos.coords.latitude, pos.coords.longitude);
         });
     </script>
 </body>
