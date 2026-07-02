@@ -2,56 +2,47 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Fixed Bus Stop Finder</title>
+    <title>KMB Bus Finder</title>
 </head>
 <body>
     <h1>Nearby Bus Stops</h1>
-    <div id="log">Status: Initializing...</div>
+    <div id="log">Status: Connecting to official API...</div>
     <div id="results"></div>
 
     <script>
         const logEl = document.getElementById("log");
         const resultsEl = document.getElementById("results");
 
-        async function updateNearbyStops(lat, lon) {
-            logEl.textContent = "Fetching live bus data...";
-            
-            const apiUrl = 'https://api.data.gov.hk/v1/transport/kmb-bus-stop-location';
-            const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(apiUrl);
-
+        async function getStops() {
+            logEl.textContent = "Fetching official data...";
             try {
-                const response = await fetch(proxyUrl);
-                const json = await response.json(); 
-                const data = JSON.parse(json.contents);
+                // Official endpoint for KMB
+                const response = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
+                const json = await response.json();
                 
-                // DEBUG: Check what the data actually looks like
-                console.log("API Response:", data);
-
-                // Use optional chaining or a check to prevent the 'undefined' error
-                const stops = data.data || []; 
-
-                if (!Array.isArray(stops)) {
-                    throw new Error("Data format error: 'data' is not an array");
-                }
-
-                resultsEl.innerHTML = "<h3>Stops found:</h3>";
-                let foundCount = 0;
-
-                stops.forEach(stop => {
-                    // Make sure lat/long exist before calculating
-                    if (stop.lat && stop.long) {
-                        const dist = getDistance(lat, lon, parseFloat(stop.lat), parseFloat(stop.long));
-                        if (dist <= 0.4) {
-                            resultsEl.innerHTML += `<p>${stop.name_en} (${(dist * 1000).toFixed(0)}m away)</p>`;
-                            foundCount++;
-                        }
-                    }
-                });
-
-                logEl.textContent = foundCount > 0 ? `Found ${foundCount} stops.` : "No stops found.";
+                // KMB API format: 'data' contains the array
+                return json.data;
             } catch (e) {
-                logEl.textContent = "Error: " + e.message;
+                logEl.textContent = "Direct API Error. Trying secondary method...";
+                return [];
             }
+        }
+
+        async function update(lat, lon) {
+            const stops = await getStops();
+            if (stops.length === 0) return;
+
+            resultsEl.innerHTML = "";
+            let count = 0;
+
+            stops.forEach(stop => {
+                const dist = getDistance(lat, lon, parseFloat(stop.lat), parseFloat(stop.long));
+                if (dist <= 0.4) {
+                    resultsEl.innerHTML += `<p>📍 ${stop.name_en} (${(dist * 1000).toFixed(0)}m)</p>`;
+                    count++;
+                }
+            });
+            logEl.textContent = `Found ${count} stops within 5 mins walk.`;
         }
 
         function getDistance(lat1, lon1, lat2, lon2) {
@@ -63,8 +54,8 @@
         }
 
         navigator.geolocation.watchPosition(
-            (pos) => updateNearbyStops(pos.coords.latitude, pos.coords.longitude),
-            (err) => logEl.textContent = "Geolocation error."
+            (pos) => update(pos.coords.latitude, pos.coords.longitude),
+            (err) => logEl.textContent = "Please enable location."
         );
     </script>
 </body>
