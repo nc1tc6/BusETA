@@ -6,12 +6,13 @@
     <style>
         body { font-family: sans-serif; padding: 20px; line-height: 1.5; }
         .stop-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 8px; background: #fafafa; }
-        .eta-item { font-size: 0.9em; color: #333; margin: 4px 0; }
-        .dir-tag { font-weight: bold; color: #007bff; }
+        .eta-item { font-size: 0.95em; color: #333; margin: 5px 0; border-bottom: 1px solid #eee; }
+        .dest-tag { font-weight: bold; color: #d9534f; }
+        .time-tag { font-family: monospace; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>Bus Arrival: Next 3 Buses</h1>
+    <h1>Bus Arrival: Destination & ETA</h1>
     <input type="text" id="routeInput" placeholder="Enter Route (e.g. 6)">
     <button onclick="runSearch()">Search</button>
     <div id="status"></div>
@@ -24,12 +25,12 @@
             const results = document.getElementById("results");
             
             status.textContent = "Locating and fetching...";
+            
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude, longitude } = pos.coords;
                 const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
                 const { data: allStops } = await res.json();
 
-                // Find stops within 500m
                 const nearby = allStops.filter(s => getDistance(latitude, longitude, s.lat, s.long) < 0.5);
                 results.innerHTML = "";
                 let found = false;
@@ -38,23 +39,24 @@
                     const etaRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
                     const { data: etaData } = await etaRes.json();
                     
-                    // Filter for specific route
                     const buses = etaData.filter(b => b.route === route);
                     
                     if (buses.length > 0) {
                         found = true;
                         let html = `<div class="stop-card"><strong>${stop.name_en}</strong><br>`;
                         
-                        // Sort by arrival time
                         buses.slice(0, 3).forEach(b => {
                             const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
-                            html += `<div class="eta-item"><span class="dir-tag">${b.dir === 'I' ? 'Inbound' : 'Outbound'}:</span> ${mins} mins</div>`;
+                            html += `<div class="eta-item">
+                                <span class="dest-tag">${b.dest_en}</span> 
+                                - <span class="time-tag">${mins} mins</span>
+                            </div>`;
                         });
                         html += `</div>`;
                         results.innerHTML += html;
                     }
                 }
-                status.textContent = found ? "Results loaded." : "No buses found.";
+                status.textContent = found ? "Results loaded." : "No buses found for this route nearby.";
             });
         }
 
