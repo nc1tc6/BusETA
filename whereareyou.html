@@ -2,15 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Nearby Bus Stops (5-Min Walk)</title>
+    <title>Dynamic Bus Stops (5-Min Walk)</title>
     <style>
         body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
-        #log { background: #eee; padding: 10px; border-radius: 5px; font-size: 0.85em; margin-bottom: 15px; }
-        .stop-card { border: 1px solid #ccc; padding: 10px; margin: 5px 0; border-radius: 5px; }
+        #log { background: #333; color: #fff; padding: 10px; border-radius: 5px; font-size: 0.8em; margin-bottom: 15px; }
+        .stop-card { border: 1px solid #ccc; padding: 10px; margin: 5px 0; border-radius: 5px; background: #f9f9f9; }
     </style>
 </head>
 <body>
-    <h1>Nearby Bus Stops</h1>
+    <h1>Nearby Bus Stops (5-Min Walk)</h1>
     <div id="log">Status: Initializing...</div>
     <div id="results"></div>
 
@@ -18,7 +18,7 @@
         const logEl = document.getElementById("log");
         const resultsEl = document.getElementById("results");
 
-        // Haversine formula to calculate distance in km
+        // Haversine formula to calculate distance
         function getDistance(lat1, lon1, lat2, lon2) {
             const R = 6371; 
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -28,26 +28,28 @@
         }
 
         async function updateNearbyStops(lat, lon) {
-            logEl.textContent = "Fetching live bus data via proxy...";
+            logEl.textContent = "Fetching live bus data...";
             
-            // Official KMB bus stop location API
+            // The official KMB API URL
             const apiUrl = 'https://api.data.gov.hk/v1/transport/kmb-bus-stop-location';
-            const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(apiUrl);
+            // Use AllOrigins proxy to bypass CORS
+            const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(apiUrl);
 
             try {
                 const response = await fetch(proxyUrl);
-                const data = await response.json(); 
+                const json = await response.json(); 
                 
-                // data.data contains the array of stops
+                // AllOrigins returns the content as a string in 'contents'
+                const data = JSON.parse(json.contents);
                 const stops = data.data; 
                 
-                resultsEl.innerHTML = "<h3>Stops within 5-min walk:</h3>";
+                resultsEl.innerHTML = "<h3>Stops found within 5-min walk:</h3>";
                 let foundCount = 0;
 
                 stops.forEach(stop => {
                     const dist = getDistance(lat, lon, parseFloat(stop.lat), parseFloat(stop.long));
                     
-                    // 0.4km is approximately a 5-minute walk
+                    // 0.4km = ~400m = ~5 mins walk
                     if (dist <= 0.4) {
                         resultsEl.innerHTML += `
                             <div class="stop-card">
@@ -59,10 +61,10 @@
                 });
 
                 logEl.textContent = foundCount > 0 
-                    ? `Success: Found ${foundCount} stops.` 
+                    ? `Found ${foundCount} stops.` 
                     : "No stops found within a 5-min walk.";
             } catch (e) {
-                logEl.textContent = "Error: Could not load data. Check API/CORS.";
+                logEl.textContent = "Error: Could not load data. " + e.message;
                 console.error(e);
             }
         }
