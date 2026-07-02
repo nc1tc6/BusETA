@@ -2,15 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Dynamic Bus Stops (5-Min Walk)</title>
-    <style>
-        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
-        #log { background: #333; color: #fff; padding: 10px; border-radius: 5px; font-size: 0.8em; margin-bottom: 15px; }
-        .stop-card { border: 1px solid #ccc; padding: 10px; margin: 5px 0; border-radius: 5px; background: #f9f9f9; }
-    </style>
+    <title>Fixed Bus Stop Finder</title>
 </head>
 <body>
-    <h1>Nearby Bus Stops (5-Min Walk)</h1>
+    <h1>Nearby Bus Stops</h1>
     <div id="log">Status: Initializing...</div>
     <div id="results"></div>
 
@@ -18,67 +13,59 @@
         const logEl = document.getElementById("log");
         const resultsEl = document.getElementById("results");
 
-        // Haversine formula to calculate distance
+        async function updateNearbyStops(lat, lon) {
+            logEl.textContent = "Fetching live bus data...";
+            
+            const apiUrl = 'https://api.data.gov.hk/v1/transport/kmb-bus-stop-location';
+            const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(apiUrl);
+
+            try {
+                const response = await fetch(proxyUrl);
+                const json = await response.json(); 
+                const data = JSON.parse(json.contents);
+                
+                // DEBUG: Check what the data actually looks like
+                console.log("API Response:", data);
+
+                // Use optional chaining or a check to prevent the 'undefined' error
+                const stops = data.data || []; 
+
+                if (!Array.isArray(stops)) {
+                    throw new Error("Data format error: 'data' is not an array");
+                }
+
+                resultsEl.innerHTML = "<h3>Stops found:</h3>";
+                let foundCount = 0;
+
+                stops.forEach(stop => {
+                    // Make sure lat/long exist before calculating
+                    if (stop.lat && stop.long) {
+                        const dist = getDistance(lat, lon, parseFloat(stop.lat), parseFloat(stop.long));
+                        if (dist <= 0.4) {
+                            resultsEl.innerHTML += `<p>${stop.name_en} (${(dist * 1000).toFixed(0)}m away)</p>`;
+                            foundCount++;
+                        }
+                    }
+                });
+
+                logEl.textContent = foundCount > 0 ? `Found ${foundCount} stops.` : "No stops found.";
+            } catch (e) {
+                logEl.textContent = "Error: " + e.message;
+            }
+        }
+
         function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; 
+            const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
-        async function updateNearbyStops(lat, lon) {
-            logEl.textContent = "Fetching live bus data...";
-            
-            // The official KMB API URL
-            const apiUrl = 'https://api.data.gov.hk/v1/transport/kmb-bus-stop-location';
-            // Use AllOrigins proxy to bypass CORS
-            const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(apiUrl);
-
-            try {
-                const response = await fetch(proxyUrl);
-                const json = await response.json(); 
-                
-                // AllOrigins returns the content as a string in 'contents'
-                const data = JSON.parse(json.contents);
-                const stops = data.data; 
-                
-                resultsEl.innerHTML = "<h3>Stops found within 5-min walk:</h3>";
-                let foundCount = 0;
-
-                stops.forEach(stop => {
-                    const dist = getDistance(lat, lon, parseFloat(stop.lat), parseFloat(stop.long));
-                    
-                    // 0.4km = ~400m = ~5 mins walk
-                    if (dist <= 0.4) {
-                        resultsEl.innerHTML += `
-                            <div class="stop-card">
-                                <strong>${stop.name_en}</strong><br>
-                                <small>${(dist * 1000).toFixed(0)} meters away</small>
-                            </div>`;
-                        foundCount++;
-                    }
-                });
-
-                logEl.textContent = foundCount > 0 
-                    ? `Found ${foundCount} stops.` 
-                    : "No stops found within a 5-min walk.";
-            } catch (e) {
-                logEl.textContent = "Error: Could not load data. " + e.message;
-                console.error(e);
-            }
-        }
-
-        // Initialize Location Tracking
-        if ("geolocation" in navigator) {
-            navigator.geolocation.watchPosition(
-                (pos) => updateNearbyStops(pos.coords.latitude, pos.coords.longitude),
-                (err) => logEl.textContent = "Location Error: " + err.message,
-                { enableHighAccuracy: true }
-            );
-        } else {
-            logEl.textContent = "Geolocation is not supported.";
-        }
+        navigator.geolocation.watchPosition(
+            (pos) => updateNearbyStops(pos.coords.latitude, pos.coords.longitude),
+            (err) => logEl.textContent = "Geolocation error."
+        );
     </script>
 </body>
 </html>
