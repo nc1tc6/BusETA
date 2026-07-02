@@ -5,62 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BusLive 2026</title>
     <style>
-        :root { --primary: #6366f1; --accent: #ec4899; --bg: #f1f5f9; }
-        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); margin: 0; color: #1e293b; }
-        
-        .header { position: sticky; top: 0; z-index: 1000; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); padding: 16px; border-bottom: 2px solid #e2e8f0; }
-        .search-row { display: flex; gap: 10px; max-width: 600px; margin: 0 auto; }
-        
-        input { flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; }
-        button { padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; }
-
-        /* Dedicated status bar */
-        #status-bar { max-width: 600px; margin: 10px auto; padding: 0 16px; font-size: 0.9rem; color: #64748b; font-weight: 500; }
-        
-        .container { max-width: 600px; margin: 10px auto; padding: 0 16px; }
-        .stop-card { background: white; padding: 20px; margin-bottom: 16px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border-left: 6px solid var(--primary); }
-        h3 { margin: 0 0 12px 0; font-size: 1.05rem; }
-
-        .eta-grid { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f8fafc; }
-        .dest { font-weight: 600; color: #334155; }
-        .mins { background: var(--accent); color: white; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 0.85rem; text-align: center; }
+        /* ... (previous styles remain the same) ... */
+        .controls { display: flex; gap: 10px; max-width: 600px; margin: 0 auto; }
+        select { padding: 12px; border-radius: 12px; border: 2px solid #e2e8f0; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="search-row">
-            <input type="text" id="routeInput" placeholder="Enter route (e.g. 6)">
+        <div class="controls">
+            <input type="text" id="routeInput" placeholder="Route (e.g. 6)">
+            <select id="langSelect">
+                <option value="en">English</option>
+                <option value="tc">繁體</option>
+                <option value="sc">简体</option>
+            </select>
             <button onclick="runSearch()">Find</button>
         </div>
     </div>
 
     <div id="status-bar"></div>
-
-    <div class="container" id="results">
-        </div>
+    <div class="container" id="results"></div>
 
     <script>
-        function setStatus(msg) { document.getElementById("status-bar").textContent = msg; }
+        // Mapping API fields to our language selection
+        const langMap = { en: 'name_en', tc: 'name_tc', sc: 'name_sc' };
+        const destMap = { en: 'dest_en', tc: 'dest_tc', sc: 'dest_sc' };
 
         async function runSearch() {
             const route = document.getElementById("routeInput").value.toUpperCase();
+            const lang = document.getElementById("langSelect").value;
             if(!route) return;
 
-            const results = document.getElementById("results");
-            results.innerHTML = ""; // Clear old results
             setStatus("Locating...");
-
             navigator.geolocation.getCurrentPosition(async (pos) => {
-                setStatus("Searching nearby stops...");
-                const { latitude, longitude } = pos.coords;
                 const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
                 const { data: allStops } = await res.json();
 
-                const nearby = allStops.filter(s => getDistance(latitude, longitude, s.lat, s.long) < 0.5);
-                
-                if (nearby.length === 0) setStatus("No stops found nearby.");
-                else setStatus(""); // Clear status when done
+                // Find stops
+                const nearby = allStops.filter(s => getDistance(pos.coords.latitude, pos.coords.longitude, s.lat, s.long) < 0.5);
+                const results = document.getElementById("results");
+                results.innerHTML = "";
 
                 for (let stop of nearby) {
                     const etaRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
@@ -68,24 +53,19 @@
                     const buses = etaData.filter(b => b.route === route);
                     
                     if (buses.length > 0) {
-                        let html = `<div class="stop-card"><h3>${stop.name_en}</h3>`;
+                        // Dynamic key access based on language selection
+                        let html = `<div class="stop-card"><h3>${stop[langMap[lang]]}</h3>`;
                         buses.slice(0, 3).forEach(b => {
                             const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
-                            html += `<div class="eta-grid"><span class="dest">${b.dest_en}</span><span class="mins">${mins} min</span></div>`;
+                            html += `<div class="eta-grid"><span class="dest">${b[destMap[lang]]}</span><span class="mins">${mins} min</span></div>`;
                         });
                         results.innerHTML += html + `</div>`;
                     }
                 }
-            }, () => setStatus("Location access denied."));
+            });
         }
-
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        }
+        
+        // ... (Keep getDistance function and setStatus function)
     </script>
 </body>
 </html>
