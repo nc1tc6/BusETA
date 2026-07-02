@@ -71,7 +71,7 @@
                     const btn = document.createElement('a');
                     btn.className = `nav-link ${i === 0 ? 'active' : ''}`;
                     btn.href = "#";
-                    btn.innerText = `To ${v.dest_tc}`;
+                    btn.innerText = `往： ${v.dest_tc}`;
                     btn.onclick = (e) => { e.preventDefault(); loadRoute(i); document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active')); btn.classList.add('active'); };
                     tabs.appendChild(btn);
                 });
