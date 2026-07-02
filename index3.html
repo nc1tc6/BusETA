@@ -42,8 +42,9 @@
             "42A", "242X", "249X", "43A", "243M", 
             "43B", "241X", "249M", "948", "948A", 
             "948B", "948X", "279X", "68E", "E42", 
-            "E31", "E32", "A32", "43"
+            "E31", "E32", "A32", "68X", "968"
         ];
+        // Partial matches will work now
         const targetStops = ["長康邨康順樓", "青盛苑", "青華苑", "長康巴士總站"];
         let routeStates = {};
 
@@ -86,13 +87,16 @@
                 const sRes = await fetch(`${API_BASE}/stop/${s.stop}`);
                 const sData = await sRes.json();
                 
-                if (targetStops.includes(sData.data.name_tc)) {
+                // Using .some() and .includes() for partial matching
+                const isTarget = targetStops.some(target => sData.data.name_tc.includes(target));
+                
+                if (isTarget) {
                     area.insertAdjacentHTML('beforeend', `<div class="stop-row">
                         <span class="text-truncate">${sData.data.name_tc}</span>
                         <span id="eta-${i}-${s.stop}" class="eta-text"></span></div>`);
                 }
             }
-            if (area.innerHTML === "") area.innerHTML = `<div class="p-2 text-muted" style="font-size:0.6rem">No matching stops</div>`;
+            if (area.innerHTML === "") area.innerHTML = `<div class="p-2 text-muted" style="font-size:0.6rem">No match</div>`;
             
             updateETAs(i, route, v);
             setInterval(() => updateETAs(i, route, v), 30000);
