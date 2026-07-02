@@ -3,66 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KMB Filtered Tracker</title>
+    <title>KMB 19-Route Optimized Tracker</title>
     <style>
         body, html { height: 100%; margin: 0; overflow: hidden; font-family: sans-serif; background: #f1f5f9; }
         .app-wrapper { height: 100vh; display: flex; flex-direction: column; }
         
-        /* Updated Grid: auto-fit ensures columns stretch to fill available width */
-        .dashboard-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
-            gap: 10px; 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 10px;
+        /* Dashboard split into 3 vertical groups */
+        .dashboard-container { 
+            flex: 1; overflow-y: auto; padding: 10px;
+            display: grid; grid-template-rows: repeat(3, minmax(200px, 1fr)); gap: 15px; 
+        }
+
+        .row-group { 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); 
+            gap: 8px; 
         }
 
         .tracker-column { 
-            display: flex; flex-direction: column; min-height: 250px; 
-            background: white; border-radius: 4px; overflow: hidden; border: 1px solid #dee2e6;
+            background: white; border-radius: 4px; border: 1px solid #dee2e6;
+            display: flex; flex-direction: column; overflow: hidden;
         }
 
-        .column-header { background: #e31837; color: white; padding: 6px; text-align: center; cursor: pointer; }
-        .route-num { font-size: 0.9rem; font-weight: bold; display: block; }
-        .dest-text { font-size: 0.65rem; opacity: 0.9; text-decoration: underline; }
+        .column-header { 
+            background: #e31837; color: white; padding: 4px; text-align: center; 
+            cursor: pointer; font-size: 0.8rem; font-weight: bold;
+        }
         
-        .scroll-area { flex: 1; overflow-y: auto; padding: 4px; }
-        .stop-row { padding: 4px; border-bottom: 1px solid #eee; font-size: 0.75rem; display: flex; justify-content: space-between; }
-        .eta-text { color: #e31837; font-weight: bold; }
+        .scroll-area { flex: 1; overflow-y: auto; padding: 5px; }
+        .stop-row { 
+            padding: 3px 0; border-bottom: 1px solid #f0f0f0; 
+            font-size: 0.65rem; display: flex; flex-direction: column; 
+        }
+        .stop-name { font-weight: 500; color: #333; }
+        .eta-container { display: flex; gap: 5px; margin-top: 2px; color: #e31837; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="app-wrapper">
-        <header style="background: #212529; color: white; padding: 10px; font-weight: bold; font-size: 0.9rem;">
-            KMB Filtered Route Monitoring
+        <header style="background: #212529; color: white; padding: 8px; font-weight: bold; font-size: 0.9rem;">
+            KMB 19-Route Monitoring Dashboard
         </header>
-        <div class="dashboard-grid" id="mainDashboard"></div>
+        <div class="dashboard-container" id="mainDashboard">
+            <div class="row-group" id="row-0"></div>
+            <div class="row-group" id="row-1"></div>
+            <div class="row-group" id="row-2"></div>
+        </div>
     </div>
 
     <script>
         const API_BASE = "https://data.etabus.gov.hk/v1/transport/kmb";
-        const routesToTrack = [
-            "42A", "242X", "249X", "43A", "243M", 
-            "43B", "241X", "249M", "948", "948A", 
-            "948B", "948X", "43", "279X", "68E",
-            "E42", "E31", "E32", "A32"
-        ];
+        const routesToTrack = ["42A", "242X", "249X", "43A", "243M", "43B", "241X", "249M", "948", "948A", "948B", "948X", "43", "279X", "68E", "E42", "E31", "E32", "A32"];
         const targetStops = ["長康邨康順樓", "青盛苑", "青華苑", "長康巴士總站"];
         let routeStates = {};
 
-        async function initDashboard() {
-            const container = document.getElementById('mainDashboard');
+        function initDashboard() {
             routesToTrack.forEach((route, i) => {
                 routeStates[i] = { idx: 0, variants: [] };
+                // Distribute into 3 rows
+                const rowId = i % 3;
                 const col = document.createElement('div');
                 col.className = 'tracker-column';
                 col.innerHTML = `<div class="column-header" id="header-${i}" onclick="toggleDirection(${i}, '${route}')">
-                                    <span class="route-num">${route}</span><span class="dest-text">Loading...</span>
-                                 </div>
-                                 <div class="scroll-area" id="col-${i}"></div>`;
-                container.appendChild(col);
+                                    ${route}</div><div class="scroll-area" id="col-${i}"></div>`;
+                document.getElementById(`row-${rowId}`).appendChild(col);
                 loadRouteData(i, route);
             });
         }
@@ -79,28 +83,20 @@
         async function renderRoute(i, route) {
             const v = routeStates[i].variants[routeStates[i].idx];
             if(!v) return;
-            document.getElementById(`header-${i}`).innerHTML = `<span class="route-num">${route}</span><span class="dest-text">${v.dest_tc}</span>`;
-            
-            const res = await fetch(`${API_BASE}/route-stop/${route}/${v.bound === 'O' ? 'outbound' : 'inbound'}/${v.service_type || '1'}`);
-            const data = await res.json();
-            
             const area = document.getElementById(`col-${i}`);
             area.innerHTML = "";
+            const res = await fetch(`${API_BASE}/route-stop/${route}/${v.bound === 'O' ? 'outbound' : 'inbound'}/${v.service_type || '1'}`);
+            const data = await res.json();
             
             for (const s of data.data.sort((a,b) => a.seq - b.seq)) {
                 const sRes = await fetch(`${API_BASE}/stop/${s.stop}`);
                 const sData = await sRes.json();
-                
-                const isTarget = targetStops.some(target => sData.data.name_tc.includes(target));
-                
-                if (isTarget) {
+                if (targetStops.some(t => sData.data.name_tc.includes(t))) {
                     area.insertAdjacentHTML('beforeend', `<div class="stop-row">
-                        <span class="text-truncate">${sData.data.name_tc}</span>
-                        <span id="eta-${i}-${s.stop}" class="eta-text"></span></div>`);
+                        <span class="stop-name">${sData.data.name_tc}</span>
+                        <span class="eta-container" id="eta-${i}-${s.stop}"></span></div>`);
                 }
             }
-            if (area.innerHTML === "") area.innerHTML = `<div class="p-2 text-muted" style="font-size:0.6rem">No match</div>`;
-            
             updateETAs(i, route, v);
             setInterval(() => updateETAs(i, route, v), 30000);
         }
@@ -111,18 +107,17 @@
         }
 
         async function updateETAs(i, route, v) {
-            const stops = document.querySelectorAll(`[id^="eta-${i}-"]`);
-            for (const el of stops) {
+            const els = document.querySelectorAll(`[id^="eta-${i}-"]`);
+            for (const el of els) {
                 const sid = el.id.replace(`eta-${i}-`, '');
                 try {
                     const res = await fetch(`${API_BASE}/eta/${sid}/${route}/${v.service_type || '1'}`);
                     const data = await res.json();
-                    const etas = data.data.filter(eta => eta.dir === v.bound && eta.eta);
-                    el.innerHTML = etas.map(eta => `${Math.max(0, Math.round((new Date(eta.eta) - new Date()) / 60000))}m`).join(' ');
+                    el.innerHTML = data.data.filter(e => e.dir === v.bound && e.eta)
+                        .map(e => `${Math.max(0, Math.round((new Date(e.eta) - new Date()) / 60000))}m`).join(' ');
                 } catch(e) {}
             }
         }
-
         initDashboard();
     </script>
 </body>
