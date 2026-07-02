@@ -1,42 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nearby Bus Stop Finder</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        #status { color: #555; }
+        .stop-card { border: 1px solid #ccc; padding: 10px; margin: 10px 0; border-radius: 8px; }
+    </style>
+</head>
 <body>
-    <h1>My Live Location & Street Name</h1>
-    <p id="location">Loading...</p>
-    <p id="address">Fetching address...</p>
+    <h1>Nearby Bus Stops</h1>
+    <div id="status">Getting your location...</div>
+    <div id="results"></div>
 
     <script>
-        const locationEl = document.getElementById("location");
-        const addressEl = document.getElementById("address");
+        // 1. A small sample database of bus stops in Sham Shui Po
+        const busStops = [
+            { name: "Tonkin Street", lat: 22.3297, lon: 114.1565 },
+            { name: "Fuk Wing Street", lat: 22.3312, lon: 114.1580 },
+            { name: "Yen Chow Street", lat: 22.3305, lon: 114.1601 }
+        ];
 
-        function updateAddress(lat, lon) {
-            // Using OpenStreetMap's free API
-            const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
-
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    // address.road is usually the street name
-                    const street = data.address.road || "Street name not found";
-                    addressEl.textContent = "Street: " + street;
-                })
-                .catch(err => {
-                    addressEl.textContent = "Could not fetch address.";
-                });
+        // 2. Haversine formula to calculate distance in km
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
+        // 3. Watch user position
         if ("geolocation" in navigator) {
             navigator.geolocation.watchPosition((position) => {
-                const lat = position.coords.latitude;
-                const lon = position.coords.longitude;
+                const myLat = position.coords.latitude;
+                const myLon = position.coords.longitude;
+                document.getElementById("status").textContent = `Current Loc: ${myLat.toFixed(4)}, ${myLon.toFixed(4)}`;
                 
-                locationEl.textContent = `Lat: ${lat.toFixed(5)}, Lon: ${lon.toFixed(5)}`;
-                
-                // Update the address whenever the location changes
-                updateAddress(lat, lon);
-            });
+                const resultsDiv = document.getElementById("results");
+                resultsDiv.innerHTML = ""; // Clear old results
+
+                // 4. Find stops within 0.5km
+                busStops.forEach(stop => {
+                    const dist = getDistance(myLat, myLon, stop.lat, stop.lon);
+                    if (dist < 0.5) {
+                        const div = document.createElement("div");
+                        div.className = "stop-card";
+                        div.innerHTML = `<strong>${stop.name}</strong><br>Distance: ${(dist * 1000).toFixed(0)} meters away`;
+                        resultsDiv.appendChild(div);
+                    }
+                });
+            }, (err) => {
+                document.getElementById("status").textContent = "Error: " + err.message;
+            }, { enableHighAccuracy: true });
         } else {
-            locationEl.textContent = "Geolocation not supported.";
+            document.getElementById("status").textContent = "Geolocation not supported.";
         }
     </script>
 </body>
