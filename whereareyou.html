@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>My Live Location</h1>
+    <p id="location">Waiting for location access...</p>
+
+    <script>
+        const locationElement = document.getElementById("location");
+
+        // Check if Geolocation is supported
+        if ("geolocation" in navigator) {
+            // watchPosition updates automatically when the device moves
+            const watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const lat = position.coords.latitude.toFixed(5);
+                    const lon = position.coords.longitude.toFixed(5);
+                    locationElement.innerHTML = `Latitude: ${lat}<br>Longitude: ${lon}`;
+                },
+                (error) => {
+                    locationElement.textContent = "Error: " + error.message;
+                },
+                {
+                    enableHighAccuracy: true, // Prioritizes GPS
+                    maximumAge: 0,           // Forces the browser to get a new position
+                    timeout: 5000            // Wait up to 5 seconds
+                }
+            );
+        } else {
+            locationElement.textContent = "Geolocation is not supported by your browser.";
+        }
+    </script>
+</body>
+</html>
