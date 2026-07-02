@@ -8,22 +8,27 @@
         body, html { height: 100%; margin: 0; overflow: hidden; font-family: sans-serif; background: #f1f5f9; }
         .app-wrapper { height: 100vh; display: flex; flex-direction: column; }
         
+        /* Updated Grid: auto-fit ensures columns stretch to fill available width */
         .dashboard-grid { 
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
-            gap: 8px; flex: 1; overflow-y: auto; padding: 10px;
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+            gap: 10px; 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 10px;
         }
 
         .tracker-column { 
-            display: flex; flex-direction: column; height: 350px; 
+            display: flex; flex-direction: column; min-height: 250px; 
             background: white; border-radius: 4px; overflow: hidden; border: 1px solid #dee2e6;
         }
 
         .column-header { background: #e31837; color: white; padding: 6px; text-align: center; cursor: pointer; }
-        .route-num { font-size: 0.85rem; font-weight: bold; display: block; }
-        .dest-text { font-size: 0.6rem; opacity: 0.9; text-decoration: underline; }
+        .route-num { font-size: 0.9rem; font-weight: bold; display: block; }
+        .dest-text { font-size: 0.65rem; opacity: 0.9; text-decoration: underline; }
         
         .scroll-area { flex: 1; overflow-y: auto; padding: 4px; }
-        .stop-row { padding: 4px; border-bottom: 1px solid #eee; font-size: 0.7rem; display: flex; justify-content: space-between; }
+        .stop-row { padding: 4px; border-bottom: 1px solid #eee; font-size: 0.75rem; display: flex; justify-content: space-between; }
         .eta-text { color: #e31837; font-weight: bold; }
     </style>
 </head>
@@ -44,7 +49,6 @@
             "948B", "948X", "43", "279X", "68E",
             "E42", "E31", "E32", "A32"
         ];
-        // Partial matches will work now
         const targetStops = ["長康邨康順樓", "青盛苑", "青華苑", "長康巴士總站"];
         let routeStates = {};
 
@@ -87,7 +91,6 @@
                 const sRes = await fetch(`${API_BASE}/stop/${s.stop}`);
                 const sData = await sRes.json();
                 
-                // Using .some() and .includes() for partial matching
                 const isTarget = targetStops.some(target => sData.data.name_tc.includes(target));
                 
                 if (isTarget) {
