@@ -8,28 +8,29 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         body { background-color: #e9ecef; margin: 0; min-height: 100vh; }
-
-        /* Container: Full width on mobile, max 900px on desktop */
+        
+        /* Full-screen container */
         .app-container {
             background-color: white;
             min-height: 100vh;
             width: 100%;
-            max-width: 900px; 
-            margin: 0 auto;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding: 20px;
         }
 
-        /* Desktop specific: Add top margin */
-        @media (min-width: 768px) {
-            .app-container { min-height: auto; margin-top: 40px; border-radius: 15px; padding-bottom: 20px; }
-            /* Desktop: Switch stop list to 2 columns */
-            #stopList { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        /* Responsive Grid: 1 column on mobile, 2 on desktop */
+        #stopList {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 992px) {
+            #stopList { grid-template-columns: 1fr 1fr; }
         }
 
-        .navbar { border-bottom: 4px solid #e31837; }
+        .navbar { border-bottom: 4px solid #e31837; margin-bottom: 20px; }
         .btn-danger { background-color: #e31837; border-color: #e31837; }
         .eta-card { border-left: 5px solid #6c757d; }
-        .badge-eta { font-size: 0.85rem; }
+        .badge-eta { font-size: 0.85rem; min-width: 80px; }
     </style>
 </head>
 <body>
@@ -41,7 +42,7 @@
             </div>
         </nav>
 
-        <div class="container py-4">
+        <div class="container">
             <div class="input-group input-group-lg shadow-sm mb-4">
                 <input type="text" id="routeInput" class="form-control text-uppercase" placeholder="Enter Route (e.g., 42A)">
                 <button class="btn btn-danger px-4" onclick="searchRoute()"><i class="fa-solid fa-magnifying-glass"></i></button>
@@ -79,7 +80,7 @@
                 });
                 container.classList.remove('d-none');
                 await loadRoute(0);
-            } catch(e) { alert("Error fetching data"); } finally { toggleElement('loading', false); }
+            } catch(e) { console.error(e); alert("Error fetching data"); } finally { toggleElement('loading', false); }
         }
 
         async function loadRoute(idx) {
@@ -87,16 +88,20 @@
             const dir = v.bound === 'O' ? 'outbound' : 'inbound';
             const res = await fetch(`${API_BASE}/route-stop/${activeRoute}/${dir}/${v.service_type || '1'}`);
             const data = await res.json();
+            
+            // Explicitly sort by sequence
+            const sortedStops = data.data.sort((a, b) => a.seq - b.seq);
+            
             const list = document.getElementById('stopList');
             list.innerHTML = "";
             
-            for (const s of data.data) {
+            for (const s of sortedStops) {
                 const sRes = await fetch(`${API_BASE}/stop/${s.stop}`);
                 const sData = await sRes.json();
                 const card = document.createElement('div');
-                card.className = "card mb-2 shadow-sm eta-card";
+                card.className = "card shadow-sm eta-card";
                 card.innerHTML = `<div class="card-body d-flex justify-content-between align-items-center p-3">
-                                    <div class="small fw-bold">${sData.data.name_tc}</div>
+                                    <div class="small fw-bold">#${s.seq} - ${sData.data.name_tc}</div>
                                     <span class="badge bg-secondary badge-eta" id="eta-${s.stop}">...</span>
                                   </div>`;
                 list.appendChild(card);
@@ -105,15 +110,17 @@
         }
 
         async function updateETA(sid, v) {
-            const res = await fetch(`${API_BASE}/eta/${sid}/${activeRoute}/${v.service_type || '1'}`);
-            const data = await res.json();
-            const eta = data.data.find(i => i.dir === v.bound);
-            const el = document.getElementById(`eta-${sid}`);
-            if (eta) {
-                const min = Math.round((new Date(eta.eta) - new Date()) / 60000);
-                el.innerText = min < 0 ? "Departed" : (min === 0 ? "Arriving" : min + " min");
-                el.className = `badge ${min <= 3 ? 'bg-danger' : 'bg-success'} badge-eta`;
-            } else { el.innerText = "No Service"; el.className = "badge bg-light text-dark badge-eta"; }
+            try {
+                const res = await fetch(`${API_BASE}/eta/${sid}/${activeRoute}/${v.service_type || '1'}`);
+                const data = await res.json();
+                const eta = data.data.find(i => i.dir === v.bound);
+                const el = document.getElementById(`eta-${sid}`);
+                if (eta) {
+                    const min = Math.round((new Date(eta.eta) - new Date()) / 60000);
+                    el.innerText = min < 0 ? "Departed" : (min === 0 ? "Arriving" : min + " min");
+                    el.className = `badge ${min <= 3 ? 'bg-danger' : 'bg-success'} badge-eta`;
+                } else { el.innerText = "No Service"; el.className = "badge bg-light text-dark badge-eta"; }
+            } catch(e) { el.innerText = "Err"; }
         }
 
         function toggleElement(id, show) { document.getElementById(id).classList.toggle('d-none', !show); }
