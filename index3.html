@@ -3,52 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KMB 19-Route Optimized Tracker</title>
+    <title>KMB 19-Route Monitoring Dashboard</title>
     <style>
-        body, html { height: 100%; margin: 0; overflow: hidden; font-family: sans-serif; background: #f1f5f9; }
-        .app-wrapper { height: 100vh; display: flex; flex-direction: column; }
-        
-        /* Dashboard split into 3 vertical groups */
-        .dashboard-container { 
-            flex: 1; overflow-y: auto; padding: 10px;
-            display: grid; grid-template-rows: repeat(3, minmax(200px, 1fr)); gap: 15px; 
-        }
+        body { margin: 0; font-family: sans-serif; background: #212529; color: #333; }
+        .app-wrapper { padding: 10px; }
+        h1 { color: white; font-size: 1.2rem; margin-bottom: 10px; }
 
-        .row-group { 
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); 
-            gap: 8px; 
+        /* Grid Layout matching image_5184a1.png */
+        .dashboard-grid { 
+            display: grid; 
+            grid-template-columns: repeat(8, 1fr); 
+            gap: 10px; 
+            margin-bottom: 10px;
         }
 
         .tracker-column { 
-            background: white; border-radius: 4px; border: 1px solid #dee2e6;
-            display: flex; flex-direction: column; overflow: hidden;
+            background: white; border-radius: 4px; overflow: hidden; 
+            border: 1px solid #dee2e6; display: flex; flex-direction: column;
         }
 
         .column-header { 
-            background: #e31837; color: white; padding: 4px; text-align: center; 
-            cursor: pointer; font-size: 0.8rem; font-weight: bold;
+            background: #e31837; color: white; padding: 6px; text-align: center; 
+            cursor: pointer; font-weight: bold; font-size: 0.8rem;
         }
-        
-        .scroll-area { flex: 1; overflow-y: auto; padding: 5px; }
-        .stop-row { 
-            padding: 3px 0; border-bottom: 1px solid #f0f0f0; 
-            font-size: 0.65rem; display: flex; flex-direction: column; 
-        }
-        .stop-name { font-weight: 500; color: #333; }
-        .eta-container { display: flex; gap: 5px; margin-top: 2px; color: #e31837; font-weight: bold; }
+        .dest-sub { font-size: 0.65rem; font-weight: normal; display: block; opacity: 0.9; text-decoration: underline; }
+
+        .scroll-area { padding: 5px; font-size: 0.75rem; }
+        .stop-row { padding: 4px 0; border-bottom: 1px solid #eee; display: flex; flex-direction: column; }
+        .eta-text { color: #e31837; font-weight: bold; margin-top: 2px; }
     </style>
 </head>
 <body>
 
     <div class="app-wrapper">
-        <header style="background: #212529; color: white; padding: 8px; font-weight: bold; font-size: 0.9rem;">
-            KMB 19-Route Monitoring Dashboard
-        </header>
-        <div class="dashboard-container" id="mainDashboard">
-            <div class="row-group" id="row-0"></div>
-            <div class="row-group" id="row-1"></div>
-            <div class="row-group" id="row-2"></div>
-        </div>
+        <h1>KMB 19-Route Monitoring Dashboard</h1>
+        <div class="dashboard-grid" id="mainDashboard"></div>
     </div>
 
     <script>
@@ -57,32 +46,32 @@
         const targetStops = ["長康邨康順樓", "青盛苑", "青華苑", "長康巴士總站"];
         let routeStates = {};
 
-        function initDashboard() {
+        async function initDashboard() {
+            const container = document.getElementById('mainDashboard');
             routesToTrack.forEach((route, i) => {
                 routeStates[i] = { idx: 0, variants: [] };
-                // Distribute into 3 rows
-                const rowId = i % 3;
                 const col = document.createElement('div');
                 col.className = 'tracker-column';
                 col.innerHTML = `<div class="column-header" id="header-${i}" onclick="toggleDirection(${i}, '${route}')">
-                                    ${route}</div><div class="scroll-area" id="col-${i}"></div>`;
-                document.getElementById(`row-${rowId}`).appendChild(col);
+                                    ${route}<span class="dest-sub">Loading...</span>
+                                 </div>
+                                 <div class="scroll-area" id="col-${i}"></div>`;
+                container.appendChild(col);
                 loadRouteData(i, route);
             });
         }
 
         async function loadRouteData(i, route) {
-            try {
-                const res = await fetch(`${API_BASE}/route/`);
-                const data = await res.json();
-                routeStates[i].variants = data.data.filter(r => r.route === route);
-                renderRoute(i, route);
-            } catch(e) {}
+            const res = await fetch(`${API_BASE}/route/`);
+            const data = await res.json();
+            routeStates[i].variants = data.data.filter(r => r.route === route);
+            renderRoute(i, route);
         }
 
         async function renderRoute(i, route) {
             const v = routeStates[i].variants[routeStates[i].idx];
-            if(!v) return;
+            document.getElementById(`header-${i}`).innerHTML = `${route}<span class="dest-sub">${v.dest_tc}</span>`;
+            
             const area = document.getElementById(`col-${i}`);
             area.innerHTML = "";
             const res = await fetch(`${API_BASE}/route-stop/${route}/${v.bound === 'O' ? 'outbound' : 'inbound'}/${v.service_type || '1'}`);
@@ -93,8 +82,8 @@
                 const sData = await sRes.json();
                 if (targetStops.some(t => sData.data.name_tc.includes(t))) {
                     area.insertAdjacentHTML('beforeend', `<div class="stop-row">
-                        <span class="stop-name">${sData.data.name_tc}</span>
-                        <span class="eta-container" id="eta-${i}-${s.stop}"></span></div>`);
+                        <div>${sData.data.name_tc}</div>
+                        <div class="eta-text" id="eta-${i}-${s.stop}"></div></div>`);
                 }
             }
             updateETAs(i, route, v);
