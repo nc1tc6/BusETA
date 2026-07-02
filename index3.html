@@ -28,7 +28,7 @@
         .navbar { border-bottom: 4px solid #e31837; margin-bottom: 20px; }
         .btn-danger { background-color: #e31837; border-color: #e31837; }
         .eta-card { border-left: 5px solid #6c757d; }
-        .badge-eta { font-size: 0.85rem; min-width: 80px; }
+        .badge-eta { font-size: 0.75rem; min-width: 80px; padding: 6px; line-height: 1.2; }
     </style>
 </head>
 <body>
@@ -104,7 +104,6 @@
                 list.appendChild(card);
             }
             
-            // Initial load and start auto-refresh
             refreshAllETAs(v);
             if (etaInterval) clearInterval(etaInterval);
             etaInterval = setInterval(() => refreshAllETAs(v), 30000);
@@ -117,12 +116,19 @@
                 try {
                     const res = await fetch(`${API_BASE}/eta/${sid}/${activeRoute}/${v.service_type || '1'}`);
                     const data = await res.json();
-                    const eta = data.data.find(i => i.dir === v.bound);
-                    if (eta) {
-                        const min = Math.round((new Date(eta.eta) - new Date()) / 60000);
-                        el.innerText = min < 0 ? "Departed" : (min === 0 ? "Arriving" : min + " min");
-                        el.className = `badge ${min <= 3 ? 'bg-danger' : 'bg-success'} badge-eta`;
-                    } else { el.innerText = "No Service"; el.className = "badge bg-light text-dark badge-eta"; }
+                    const etas = data.data.filter(i => i.dir === v.bound && i.eta);
+                    
+                    if (etas.length > 0) {
+                        const displayTimes = etas.slice(0, 2).map(item => {
+                            const min = Math.round((new Date(item.eta) - new Date()) / 60000);
+                            return min < 0 ? "Departed" : (min === 0 ? "Arriving" : min + " min");
+                        });
+                        el.innerHTML = displayTimes.join('<br>');
+                        el.className = `badge ${etas[0].eta ? 'bg-danger' : 'bg-success'} badge-eta`;
+                    } else { 
+                        el.innerText = "No Service"; 
+                        el.className = "badge bg-light text-dark badge-eta"; 
+                    }
                 } catch(e) { el.innerText = "Err"; }
             }
         }
