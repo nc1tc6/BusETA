@@ -1,32 +1,42 @@
 <!DOCTYPE html>
 <html>
 <body>
-    <h1>My Live Location</h1>
-    <p id="location">Waiting for location access...</p>
+    <h1>My Live Location & Street Name</h1>
+    <p id="location">Loading...</p>
+    <p id="address">Fetching address...</p>
 
     <script>
-        const locationElement = document.getElementById("location");
+        const locationEl = document.getElementById("location");
+        const addressEl = document.getElementById("address");
 
-        // Check if Geolocation is supported
+        function updateAddress(lat, lon) {
+            // Using OpenStreetMap's free API
+            const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    // address.road is usually the street name
+                    const street = data.address.road || "Street name not found";
+                    addressEl.textContent = "Street: " + street;
+                })
+                .catch(err => {
+                    addressEl.textContent = "Could not fetch address.";
+                });
+        }
+
         if ("geolocation" in navigator) {
-            // watchPosition updates automatically when the device moves
-            const watchId = navigator.geolocation.watchPosition(
-                (position) => {
-                    const lat = position.coords.latitude.toFixed(5);
-                    const lon = position.coords.longitude.toFixed(5);
-                    locationElement.innerHTML = `Latitude: ${lat}<br>Longitude: ${lon}`;
-                },
-                (error) => {
-                    locationElement.textContent = "Error: " + error.message;
-                },
-                {
-                    enableHighAccuracy: true, // Prioritizes GPS
-                    maximumAge: 0,           // Forces the browser to get a new position
-                    timeout: 5000            // Wait up to 5 seconds
-                }
-            );
+            navigator.geolocation.watchPosition((position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                
+                locationEl.textContent = `Lat: ${lat.toFixed(5)}, Lon: ${lon.toFixed(5)}`;
+                
+                // Update the address whenever the location changes
+                updateAddress(lat, lon);
+            });
         } else {
-            locationElement.textContent = "Geolocation is not supported by your browser.";
+            locationEl.textContent = "Geolocation not supported.";
         }
     </script>
 </body>
