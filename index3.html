@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KMB 20-Route Concurrent Tracker</title>
+    <title>KMB Filtered Tracker</title>
     <style>
         body, html { height: 100%; margin: 0; overflow: hidden; font-family: sans-serif; background: #f1f5f9; }
         .app-wrapper { height: 100vh; display: flex; flex-direction: column; }
@@ -31,20 +31,20 @@
 
     <div class="app-wrapper">
         <header style="background: #212529; color: white; padding: 10px; font-weight: bold; font-size: 0.9rem;">
-            KMB Route Monitoring Dashboard
+            KMB Filtered Route Monitoring
         </header>
         <div class="dashboard-grid" id="mainDashboard"></div>
     </div>
 
     <script>
         const API_BASE = "https://data.etabus.gov.hk/v1/transport/kmb";
-        // Updated route list including E42, E31, E32, A32
         const routesToTrack = [
             "42A", "242X", "249X", "43A", "243M", 
             "43B", "241X", "249M", "948", "948A", 
             "948B", "948X", "279X", "68E", "E42", 
-            "E31", "E32", "A32", "68X", "968"
+            "E31", "E32", "A32", "43"
         ];
+        const targetStops = ["長康邨康順樓", "青盛苑", "青華苑"];
         let routeStates = {};
 
         async function initDashboard() {
@@ -68,7 +68,7 @@
                 const data = await res.json();
                 routeStates[i].variants = data.data.filter(r => r.route === route);
                 renderRoute(i, route);
-            } catch(e) { console.error(e); }
+            } catch(e) {}
         }
 
         async function renderRoute(i, route) {
@@ -81,13 +81,19 @@
             
             const area = document.getElementById(`col-${i}`);
             area.innerHTML = "";
+            
             for (const s of data.data.sort((a,b) => a.seq - b.seq)) {
                 const sRes = await fetch(`${API_BASE}/stop/${s.stop}`);
                 const sData = await sRes.json();
-                area.insertAdjacentHTML('beforeend', `<div class="stop-row">
-                    <span class="text-truncate">${sData.data.name_tc}</span>
-                    <span id="eta-${i}-${s.stop}" class="eta-text"></span></div>`);
+                
+                if (targetStops.includes(sData.data.name_tc)) {
+                    area.insertAdjacentHTML('beforeend', `<div class="stop-row">
+                        <span class="text-truncate">${sData.data.name_tc}</span>
+                        <span id="eta-${i}-${s.stop}" class="eta-text"></span></div>`);
+                }
             }
+            if (area.innerHTML === "") area.innerHTML = `<div class="p-2 text-muted" style="font-size:0.6rem">No matching stops</div>`;
+            
             updateETAs(i, route, v);
             setInterval(() => updateETAs(i, route, v), 30000);
         }
