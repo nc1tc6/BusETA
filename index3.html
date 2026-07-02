@@ -8,27 +8,16 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         body { background-color: #e9ecef; margin: 0; min-height: 100vh; }
+        .app-container { background-color: white; min-height: 100vh; width: 100%; padding: 20px; }
         
-        .app-container {
-            background-color: white;
-            min-height: 100vh;
-            width: 100%;
-            padding: 20px;
-        }
-
-        #stopList {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px;
-        }
-        @media (min-width: 992px) {
-            #stopList { grid-template-columns: 1fr 1fr; }
-        }
+        /* Responsive Grid: 1 column on mobile, 2 on desktop */
+        #stopList { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        @media (min-width: 992px) { #stopList { grid-template-columns: 1fr 1fr; } }
 
         .navbar { border-bottom: 4px solid #e31837; margin-bottom: 20px; }
         .btn-danger { background-color: #e31837; border-color: #e31837; }
         .eta-card { border-left: 5px solid #6c757d; }
-        .badge-eta { font-size: 0.75rem; min-width: 80px; padding: 6px; line-height: 1.2; }
+        .badge-eta { font-size: 0.75rem; min-width: 80px; padding: 8px; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -45,7 +34,6 @@
                 <input type="text" id="routeInput" class="form-control text-uppercase" placeholder="Enter Route (e.g., 42A)">
                 <button class="btn btn-danger px-4" onclick="searchRoute()"><i class="fa-solid fa-magnifying-glass"></i></button>
             </div>
-
             <div id="directionBlock" class="d-grid gap-2 mb-4 d-none"></div>
             <div id="loading" class="text-center py-5 d-none"><div class="spinner-border text-danger"></div></div>
             <div id="stopList"></div>
@@ -119,7 +107,7 @@
                     const etas = data.data.filter(i => i.dir === v.bound && i.eta);
                     
                     if (etas.length > 0) {
-                        const displayTimes = etas.slice(0, 2).map(item => {
+                        const displayTimes = etas.map(item => {
                             const min = Math.round((new Date(item.eta) - new Date()) / 60000);
                             return min < 0 ? "Departed" : (min === 0 ? "Arriving" : min + " min");
                         });
