@@ -3,34 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KMB 8-Route Interactive Tracker</title>
+    <title>KMB 20-Route Concurrent Tracker</title>
     <style>
         body, html { height: 100%; margin: 0; overflow: hidden; font-family: sans-serif; background: #f1f5f9; }
         .app-wrapper { height: 100vh; display: flex; flex-direction: column; }
-        .dashboard-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; flex: 1; overflow-x: auto; padding: 10px; }
-        .tracker-column { display: flex; flex-direction: column; height: 100%; background: white; border-radius: 4px; overflow: hidden; border: 1px solid #dee2e6; }
+        
+        .dashboard-grid { 
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
+            gap: 8px; flex: 1; overflow-y: auto; padding: 10px;
+        }
+
+        .tracker-column { 
+            display: flex; flex-direction: column; height: 350px; 
+            background: white; border-radius: 4px; overflow: hidden; border: 1px solid #dee2e6;
+        }
+
         .column-header { background: #e31837; color: white; padding: 6px; text-align: center; cursor: pointer; }
-        .column-header:hover { background: #c2142e; }
-        .route-num { font-size: 0.9rem; font-weight: bold; display: block; }
-        .dest-text { font-size: 0.65rem; opacity: 0.9; text-decoration: underline; }
+        .route-num { font-size: 0.85rem; font-weight: bold; display: block; }
+        .dest-text { font-size: 0.6rem; opacity: 0.9; text-decoration: underline; }
+        
         .scroll-area { flex: 1; overflow-y: auto; padding: 4px; }
-        .stop-row { padding: 4px; border-bottom: 1px solid #eee; font-size: 0.75rem; display: flex; justify-content: space-between; align-items: center; }
-        .eta-text { color: #e31837; font-weight: bold; margin-left: 5px; }
+        .stop-row { padding: 4px; border-bottom: 1px solid #eee; font-size: 0.7rem; display: flex; justify-content: space-between; }
+        .eta-text { color: #e31837; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="app-wrapper">
         <header style="background: #212529; color: white; padding: 10px; font-weight: bold; font-size: 0.9rem;">
-            KMB 8-Route Concurrent Tracker (Click destination to toggle direction)
+            KMB Route Monitoring Dashboard
         </header>
         <div class="dashboard-grid" id="mainDashboard"></div>
     </div>
 
     <script>
         const API_BASE = "https://data.etabus.gov.hk/v1/transport/kmb";
-        const routesToTrack = ["42A", "6C", "1A", "27", "87D", "213X", "68X", "968"];
-        let routeStates = {}; // Track current index for each route
+        // Updated route list including E42, E31, E32, A32
+        const routesToTrack = [
+            "42A", "242X", "249X", "43A", "243M", 
+            "43B", "241X", "249M", "948", "948A", 
+            "948B", "948X", "279X", "68E", "E42", 
+            "E31", "E32", "A32", "68X", "968"
+        ];
+        let routeStates = {};
 
         async function initDashboard() {
             const container = document.getElementById('mainDashboard');
@@ -38,7 +53,9 @@
                 routeStates[i] = { idx: 0, variants: [] };
                 const col = document.createElement('div');
                 col.className = 'tracker-column';
-                col.innerHTML = `<div class="column-header" id="header-${i}" onclick="toggleDirection(${i}, '${route}')"></div>
+                col.innerHTML = `<div class="column-header" id="header-${i}" onclick="toggleDirection(${i}, '${route}')">
+                                    <span class="route-num">${route}</span><span class="dest-text">Loading...</span>
+                                 </div>
                                  <div class="scroll-area" id="col-${i}"></div>`;
                 container.appendChild(col);
                 loadRouteData(i, route);
@@ -46,18 +63,20 @@
         }
 
         async function loadRouteData(i, route) {
-            const res = await fetch(`${API_BASE}/route/`);
-            const data = await res.json();
-            routeStates[i].variants = data.data.filter(r => r.route === route);
-            renderRoute(i, route);
+            try {
+                const res = await fetch(`${API_BASE}/route/`);
+                const data = await res.json();
+                routeStates[i].variants = data.data.filter(r => r.route === route);
+                renderRoute(i, route);
+            } catch(e) { console.error(e); }
         }
 
         async function renderRoute(i, route) {
             const v = routeStates[i].variants[routeStates[i].idx];
+            if(!v) return;
             document.getElementById(`header-${i}`).innerHTML = `<span class="route-num">${route}</span><span class="dest-text">${v.dest_tc}</span>`;
             
-            const dir = v.bound === 'O' ? 'outbound' : 'inbound';
-            const res = await fetch(`${API_BASE}/route-stop/${route}/${dir}/${v.service_type || '1'}`);
+            const res = await fetch(`${API_BASE}/route-stop/${route}/${v.bound === 'O' ? 'outbound' : 'inbound'}/${v.service_type || '1'}`);
             const data = await res.json();
             
             const area = document.getElementById(`col-${i}`);
@@ -70,6 +89,7 @@
                     <span id="eta-${i}-${s.stop}" class="eta-text"></span></div>`);
             }
             updateETAs(i, route, v);
+            setInterval(() => updateETAs(i, route, v), 30000);
         }
 
         function toggleDirection(i, route) {
@@ -81,10 +101,12 @@
             const stops = document.querySelectorAll(`[id^="eta-${i}-"]`);
             for (const el of stops) {
                 const sid = el.id.replace(`eta-${i}-`, '');
-                const res = await fetch(`${API_BASE}/eta/${sid}/${route}/${v.service_type || '1'}`);
-                const data = await res.json();
-                const etas = data.data.filter(eta => eta.dir === v.bound && eta.eta);
-                el.innerHTML = etas.map(eta => `${Math.max(0, Math.round((new Date(eta.eta) - new Date()) / 60000))}m`).join(' ');
+                try {
+                    const res = await fetch(`${API_BASE}/eta/${sid}/${route}/${v.service_type || '1'}`);
+                    const data = await res.json();
+                    const etas = data.data.filter(eta => eta.dir === v.bound && eta.eta);
+                    el.innerHTML = etas.map(eta => `${Math.max(0, Math.round((new Date(eta.eta) - new Date()) / 60000))}m`).join(' ');
+                } catch(e) {}
             }
         }
 
