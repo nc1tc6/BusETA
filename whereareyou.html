@@ -5,23 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BusLive 2026</title>
     <style>
-        :root { --primary: #2563eb; }
-        body { font-family: system-ui; background: #f8fafc; margin: 0; padding-bottom: 20px; }
+        :root { --primary: #6366f1; --accent: #ec4899; --bg: #f1f5f9; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #1e293b; }
         
-        .header { position: sticky; top: 0; z-index: 1000; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 16px; border-bottom: 1px solid #e2e8f0; display: flex; gap: 10px; }
-        input { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; }
-        button { padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .header { position: sticky; top: 0; z-index: 1000; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); padding: 20px; border-bottom: 2px solid #e2e8f0; display: flex; gap: 10px; }
+        input { flex: 1; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; outline: none; }
+        button { padding: 14px 28px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; }
 
         .container { max-width: 600px; margin: 20px auto; padding: 0 16px; }
         
-        /* Loading Spinner */
-        #status { text-align: center; color: #64748b; margin: 20px 0; font-style: italic; }
-        .spinner { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .stop-card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 6px solid var(--primary); }
+        h3 { margin: 0 0 15px 0; font-size: 1.1rem; color: #334155; }
 
-        .stop-card { background: white; padding: 16px; margin-bottom: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .eta-grid { display: flex; justify-content: space-between; padding: 8px 0; }
-        .mins { background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 6px; font-weight: bold; }
+        /* The Grid Alignment */
+        .eta-grid { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+        .dest { font-weight: 600; color: #0f172a; font-size: 0.95rem; }
+        .mins { background: var(--accent); color: white; padding: 6px 14px; border-radius: 20px; font-weight: 800; font-size: 0.9rem; min-width: 60px; text-align: center; }
     </style>
 </head>
 <body>
@@ -37,55 +36,37 @@
     </div>
 
     <script>
-        function setStatus(msg, showSpinner = false) {
-            const status = document.getElementById("status");
-            status.innerHTML = showSpinner ? `<div class="spinner"></div>${msg}` : msg;
-        }
+        function setStatus(msg) { document.getElementById("status").textContent = msg; }
 
         async function runSearch() {
             const route = document.getElementById("routeInput").value.toUpperCase();
             if(!route) return;
 
-            setStatus("Locating you...", true);
-            
-            // Set a timeout to stop loading if GPS hangs
-            const geoOptions = { timeout: 10000, enableHighAccuracy: true };
-            
+            setStatus("Locating...");
             navigator.geolocation.getCurrentPosition(async (pos) => {
-                setStatus("Fetching bus data...", true);
+                const { latitude, longitude } = pos.coords;
+                const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
+                const { data: allStops } = await res.json();
+
+                const nearby = allStops.filter(s => getDistance(latitude, longitude, s.lat, s.long) < 0.5);
+                const results = document.getElementById("results");
+                results.innerHTML = "";
                 
-                try {
-                    const { latitude, longitude } = pos.coords;
-                    const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
-                    const { data: allStops } = await res.json();
-
-                    const nearby = allStops.filter(s => getDistance(latitude, longitude, s.lat, s.long) < 0.5);
-                    const results = document.getElementById("results");
-                    results.innerHTML = "";
+                for (let stop of nearby) {
+                    const etaRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
+                    const { data: etaData } = await etaRes.json();
+                    const buses = etaData.filter(b => b.route === route);
                     
-                    if (nearby.length === 0) setStatus("No nearby stops found.");
-                    else setStatus("");
-
-                    for (let stop of nearby) {
-                        const etaRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
-                        const { data: etaData } = await etaRes.json();
-                        const buses = etaData.filter(b => b.route === route);
-                        
-                        if (buses.length > 0) {
-                            let html = `<div class="stop-card"><h3>${stop.name_en}</h3>`;
-                            buses.slice(0, 3).forEach(b => {
-                                const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
-                                html += `<div class="eta-grid"><span>${b.dest_en}</span><span class="mins">${mins} min</span></div>`;
-                            });
-                            results.innerHTML += html + `</div>`;
-                        }
+                    if (buses.length > 0) {
+                        let html = `<div class="stop-card"><h3>${stop.name_en}</h3>`;
+                        buses.slice(0, 3).forEach(b => {
+                            const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
+                            html += `<div class="eta-grid"><span class="dest">${b.dest_en}</span><span class="mins">${mins} min</span></div>`;
+                        });
+                        results.innerHTML += html + `</div>`;
                     }
-                } catch(e) {
-                    setStatus("Error loading data.");
                 }
-            }, (err) => {
-                setStatus("Location access denied or timed out.");
-            }, geoOptions);
+            });
         }
 
         function getDistance(lat1, lon1, lat2, lon2) {
