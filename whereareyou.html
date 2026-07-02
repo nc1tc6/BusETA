@@ -2,30 +2,53 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Route Arrival Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KMB Bus stop with GPS</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; line-height: 1.5; }
-        .stop-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 8px; background: #fafafa; }
-        .eta-item { font-size: 0.95em; color: #333; margin: 5px 0; border-bottom: 1px solid #eee; }
-        .dest-tag { font-weight: bold; color: #d9534f; }
-        .time-tag { font-family: monospace; font-weight: bold; }
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        
+        /* Sticky Search Bar */
+        .header { position: sticky; top: 0; z-index: 1000; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 16px; border-bottom: 1px solid #e2e8f0; display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 16px; }
+        button { padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+        /* Results Area */
+        .container { max-width: 600px; margin: 20px auto; padding: 0 16px; }
+        .stop-card { background: white; padding: 16px; margin-bottom: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .eta-grid { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+        .dest { font-weight: 600; color: #475569; }
+        .mins { background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 6px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>Bus Arrival: Destination & ETA</h1>
-    <input type="text" id="routeInput" placeholder="Enter Route (e.g. 6)">
-    <button onclick="runSearch()">Search</button>
-    <div id="status"></div>
-    <div id="results"></div>
+
+    <div class="header">
+        <input type="text" id="routeInput" placeholder="Route number (e.g. 6)">
+        <button onclick="runSearch()">Find</button>
+    </div>
+
+    <div class="container">
+        <div id="status">Enter route to see live arrivals...</div>
+        <div id="results"></div>
+    </div>
 
     <script>
+        // (Distance function remains the same)
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
         async function runSearch() {
             const route = document.getElementById("routeInput").value.toUpperCase();
-            const status = document.getElementById("status");
             const results = document.getElementById("results");
+            const status = document.getElementById("status");
             
-            status.textContent = "Locating and fetching...";
-            
+            status.textContent = "Updating location...";
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude, longitude } = pos.coords;
                 const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
@@ -33,39 +56,22 @@
 
                 const nearby = allStops.filter(s => getDistance(latitude, longitude, s.lat, s.long) < 0.5);
                 results.innerHTML = "";
-                let found = false;
-
+                
                 for (let stop of nearby) {
                     const etaRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
                     const { data: etaData } = await etaRes.json();
-                    
                     const buses = etaData.filter(b => b.route === route);
                     
                     if (buses.length > 0) {
-                        found = true;
-                        let html = `<div class="stop-card"><strong>${stop.name_en}</strong><br>`;
-                        
+                        let html = `<div class="stop-card"><h3>${stop.name_en}</h3>`;
                         buses.slice(0, 3).forEach(b => {
                             const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
-                            html += `<div class="eta-item">
-                                <span class="dest-tag">${b.dest_en}</span> 
-                                - <span class="time-tag">${mins} mins</span>
-                            </div>`;
+                            html += `<div class="eta-grid"><span class="dest">${b.dest_en}</span><span class="mins">${mins} min</span></div>`;
                         });
-                        html += `</div>`;
-                        results.innerHTML += html;
+                        results.innerHTML += html + `</div>`;
                     }
                 }
-                status.textContent = found ? "Results loaded." : "No buses found for this route nearby.";
             });
-        }
-
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
     </script>
 </body>
