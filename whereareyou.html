@@ -2,27 +2,61 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>KMB Route Finder</title>
+    <title>Route Arrival Tracker</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .controls { margin-bottom: 20px; }
-        .stop-card { border: 1px solid #ddd; padding: 15px; margin-top: 10px; border-radius: 8px; }
+        body { font-family: sans-serif; padding: 20px; line-height: 1.5; }
+        .stop-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 8px; background: #fafafa; }
+        .eta-item { font-size: 0.9em; color: #333; margin: 4px 0; }
+        .dir-tag { font-weight: bold; color: #007bff; }
     </style>
 </head>
 <body>
-    <h1>Bus Arrival by Route</h1>
-    
-    <div class="controls">
-        <input type="text" id="routeInput" placeholder="Enter Route (e.g. 6)">
-        <button onclick="runSearch()">Search</button>
-    </div>
-    
-    <div id="status">Click search to find your route...</div>
+    <h1>Bus Arrival: Next 3 Buses</h1>
+    <input type="text" id="routeInput" placeholder="Enter Route (e.g. 6)">
+    <button onclick="runSearch()">Search</button>
+    <div id="status"></div>
     <div id="results"></div>
 
     <script>
-        const statusEl = document.getElementById("status");
-        const resultsEl = document.getElementById("results");
+        async function runSearch() {
+            const route = document.getElementById("routeInput").value.toUpperCase();
+            const status = document.getElementById("status");
+            const results = document.getElementById("results");
+            
+            status.textContent = "Locating and fetching...";
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
+                const { data: allStops } = await res.json();
+
+                // Find stops within 500m
+                const nearby = allStops.filter(s => getDistance(latitude, longitude, s.lat, s.long) < 0.5);
+                results.innerHTML = "";
+                let found = false;
+
+                for (let stop of nearby) {
+                    const etaRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
+                    const { data: etaData } = await etaRes.json();
+                    
+                    // Filter for specific route
+                    const buses = etaData.filter(b => b.route === route);
+                    
+                    if (buses.length > 0) {
+                        found = true;
+                        let html = `<div class="stop-card"><strong>${stop.name_en}</strong><br>`;
+                        
+                        // Sort by arrival time
+                        buses.slice(0, 3).forEach(b => {
+                            const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
+                            html += `<div class="eta-item"><span class="dir-tag">${b.dir === 'I' ? 'Inbound' : 'Outbound'}:</span> ${mins} mins</div>`;
+                        });
+                        html += `</div>`;
+                        results.innerHTML += html;
+                    }
+                }
+                status.textContent = found ? "Results loaded." : "No buses found.";
+            });
+        }
 
         function getDistance(lat1, lon1, lat2, lon2) {
             const R = 6371;
@@ -30,46 +64,6 @@
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        }
-
-        async function runSearch() {
-            const route = document.getElementById("routeInput").value.toUpperCase();
-            if (!route) return alert("Please enter a route number.");
-
-            statusEl.textContent = "Getting location...";
-            
-            // 1. Get Location
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                const { latitude, longitude } = pos.coords;
-                statusEl.textContent = "Searching for nearby stops for route " + route + "...";
-
-                // 2. Fetch all stops
-                const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
-                const { data: allStops } = await res.json();
-
-                // 3. Find stops within 500m
-                const nearbyStops = allStops.filter(s => getDistance(latitude, longitude, s.lat, s.long) < 0.5);
-
-                resultsEl.innerHTML = "";
-                let found = false;
-
-                // 4. Check each nearby stop for the route
-                for (let stop of nearbyStops) {
-                    const etaRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
-                    const { data: etaData } = await etaRes.json();
-                    
-                    const bus = etaData.find(b => b.route === route);
-                    if (bus) {
-                        found = true;
-                        const mins = Math.max(0, Math.round((new Date(bus.eta) - new Date()) / 60000));
-                        resultsEl.innerHTML += `<div class="stop-card">
-                            <strong>${stop.name_en}</strong><br>
-                            Next ${route}: ${bus.eta ? mins + " mins" : "Scheduled"}
-                        </div>`;
-                    }
-                }
-                statusEl.textContent = found ? "Results found." : "No upcoming buses for route " + route + " nearby.";
-            }, () => statusEl.textContent = "Location access denied.");
         }
     </script>
 </body>
