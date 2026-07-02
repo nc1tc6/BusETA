@@ -9,26 +9,28 @@
         .app-wrapper { padding: 10px; }
         h1 { color: white; font-size: 1.2rem; margin-bottom: 10px; }
 
-        /* Grid fixed to 8 columns as seen in the reference */
+        /* Responsive Grid: Auto-fills items, wrapping at 6 columns */
         .dashboard-grid { 
             display: grid; 
-            grid-template-columns: repeat(8, 1fr); 
+            /* minmax(150px, 1fr) ensures they fit well; grid caps at roughly 6 items per row */
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
             gap: 10px;
+            max-width: 100%;
         }
 
         .tracker-column { 
             background: white; border-radius: 4px; overflow: hidden; 
             border: 1px solid #dee2e6; display: flex; flex-direction: column;
-            min-height: 200px;
+            min-height: 180px;
         }
 
         .column-header { 
             background: #e31837; color: white; padding: 6px; text-align: center; 
-            cursor: pointer; font-weight: bold; font-size: 0.85rem;
+            cursor: pointer; font-weight: bold; font-size: 0.8rem;
         }
-        .dest-sub { font-size: 0.65rem; font-weight: normal; display: block; opacity: 0.95; text-decoration: underline; }
+        .dest-sub { font-size: 0.6rem; font-weight: normal; display: block; opacity: 0.95; text-decoration: underline; }
 
-        .scroll-area { padding: 5px; font-size: 0.75rem; }
+        .scroll-area { padding: 5px; font-size: 0.7rem; }
         .stop-row { padding: 4px 0; border-bottom: 1px solid #eee; display: flex; flex-direction: column; }
         .eta-text { color: #e31837; font-weight: bold; margin-top: 2px; }
     </style>
