@@ -9,7 +9,6 @@
     <style>
         body { background-color: #e9ecef; margin: 0; min-height: 100vh; }
         
-        /* Full-screen container */
         .app-container {
             background-color: white;
             min-height: 100vh;
@@ -17,7 +16,6 @@
             padding: 20px;
         }
 
-        /* Responsive Grid: 1 column on mobile, 2 on desktop */
         #stopList {
             display: grid;
             grid-template-columns: 1fr;
@@ -56,13 +54,14 @@
 
     <script>
         const API_BASE = "https://data.etabus.gov.hk/v1/transport/kmb";
-        let activeRoute = "", availableVariants = [];
+        let activeRoute = "", availableVariants = [], etaInterval = null;
 
         async function searchRoute() {
             activeRoute = document.getElementById('routeInput').value.trim().toUpperCase();
             if (!activeRoute) return;
             toggleElement('loading', true);
             document.getElementById('stopList').innerHTML = "";
+            if (etaInterval) clearInterval(etaInterval);
             
             try {
                 const res = await fetch(`${API_BASE}/route/`);
@@ -88,8 +87,6 @@
             const dir = v.bound === 'O' ? 'outbound' : 'inbound';
             const res = await fetch(`${API_BASE}/route-stop/${activeRoute}/${dir}/${v.service_type || '1'}`);
             const data = await res.json();
-            
-            // Explicitly sort by sequence
             const sortedStops = data.data.sort((a, b) => a.seq - b.seq);
             
             const list = document.getElementById('stopList');
@@ -105,22 +102,29 @@
                                     <span class="badge bg-secondary badge-eta" id="eta-${s.stop}">...</span>
                                   </div>`;
                 list.appendChild(card);
-                updateETA(s.stop, v);
             }
+            
+            // Initial load and start auto-refresh
+            refreshAllETAs(v);
+            if (etaInterval) clearInterval(etaInterval);
+            etaInterval = setInterval(() => refreshAllETAs(v), 30000);
         }
 
-        async function updateETA(sid, v) {
-            try {
-                const res = await fetch(`${API_BASE}/eta/${sid}/${activeRoute}/${v.service_type || '1'}`);
-                const data = await res.json();
-                const eta = data.data.find(i => i.dir === v.bound);
-                const el = document.getElementById(`eta-${sid}`);
-                if (eta) {
-                    const min = Math.round((new Date(eta.eta) - new Date()) / 60000);
-                    el.innerText = min < 0 ? "Departed" : (min === 0 ? "Arriving" : min + " min");
-                    el.className = `badge ${min <= 3 ? 'bg-danger' : 'bg-success'} badge-eta`;
-                } else { el.innerText = "No Service"; el.className = "badge bg-light text-dark badge-eta"; }
-            } catch(e) { el.innerText = "Err"; }
+        async function refreshAllETAs(v) {
+            const stops = Array.from(document.querySelectorAll('[id^="eta-"]'));
+            for (const el of stops) {
+                const sid = el.id.replace('eta-', '');
+                try {
+                    const res = await fetch(`${API_BASE}/eta/${sid}/${activeRoute}/${v.service_type || '1'}`);
+                    const data = await res.json();
+                    const eta = data.data.find(i => i.dir === v.bound);
+                    if (eta) {
+                        const min = Math.round((new Date(eta.eta) - new Date()) / 60000);
+                        el.innerText = min < 0 ? "Departed" : (min === 0 ? "Arriving" : min + " min");
+                        el.className = `badge ${min <= 3 ? 'bg-danger' : 'bg-success'} badge-eta`;
+                    } else { el.innerText = "No Service"; el.className = "badge bg-light text-dark badge-eta"; }
+                } catch(e) { el.innerText = "Err"; }
+            }
         }
 
         function toggleElement(id, show) { document.getElementById(id).classList.toggle('d-none', !show); }
