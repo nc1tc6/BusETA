@@ -2,87 +2,39 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>九巴全站點查詢</title>
-    <style>
-        body { font-family: -apple-system, sans-serif; background: #f4f4f9; padding: 15px; margin: 0; }
-        .container { max-width: 600px; margin: auto; }
-        h3 { color: #333; }
-        .card { background: white; padding: 15px; margin: 8px 0; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; transition: background 0.2s; }
-        .card:active { background: #eef; }
-        .terminal { border-left: 5px solid #e31d2b; } /* 總站標記 */
-        .eta-time { font-weight: bold; color: #e31d2b; float: right; }
-        .back-btn { background: #333; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; display: inline-block; margin-bottom: 10px; }
-    </style>
+    <title>九巴全動態站點查詢</title>
 </head>
-<body onload="fetchAllNearby()">
-    <div class="container">
-        <div id="header"><h3>正在尋找周邊車站...</h3></div>
-        <div id="output"></div>
-    </div>
+<body onload="dynamicDiscovery()">
+    <div id="ui">正在進行全動態站點掃描... (這可能需要一點時間)</div>
 
     <script>
-        async function fetchAllNearby() {
-            const output = document.getElementById('output');
-            const header = document.getElementById('header');
-
-            if (!navigator.geolocation) { header.innerHTML = "不支援定位"; return; }
-
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                const { latitude: lat, longitude: lon } = pos.coords;
-                
-                try {
-                    const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
-                    const { data } = await res.json();
-                    
-                    // 計算距離並篩選 1.5 公里內的「所有」站點（含總站）
-                    const stops = data.map(s => ({
-                        ...s,
-                        dist: Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111
-                    }))
-                    .filter(s => s.dist < 1.5) 
-                    .sort((a, b) => a.dist - b.dist);
-
-                    header.innerHTML = `<h3>周邊車站 (共 ${stops.length} 個)</h3>`;
-                    output.innerHTML = "";
-                    
-                    stops.forEach(s => {
-                        const isTerminal = s.name_tc.includes("總站");
-                        const div = document.createElement('div');
-                        div.className = `card ${isTerminal ? 'terminal' : ''}`;
-                        div.innerHTML = `<div><strong>${s.name_tc}</strong> ${isTerminal ? ' (總站)' : ''}</div>
-                                         <div style="font-size:0.8rem; color:#888;">距離 ${s.dist.toFixed(2)} km | ID: ${s.stop}</div>`;
-                        div.onclick = () => showEta(s.stop, s.name_tc);
-                        output.appendChild(div);
-                    });
-                } catch (e) { header.innerHTML = "無法載入站點資料"; }
-            });
-        }
-
-        async function showEta(stopId, name) {
-            const output = document.getElementById('output');
-            const header = document.getElementById('header');
+        async function dynamicDiscovery() {
+            const ui = document.getElementById('ui');
             
-            header.innerHTML = `<div class="back-btn" onclick="location.reload()">← 返回列表</div><h4>${name} 的班次</h4>`;
-            output.innerHTML = "查詢中...";
+            // 1. 取得全港所有路線
+            const routeRes = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/route/');
+            const { data: routes } = await routeRes.json();
             
-            try {
-                const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stopId}`);
-                const { data } = await res.json();
+            ui.innerHTML = "正在解析路線站點...";
+            
+            const stopMap = new Map(); // 用 Map 儲存，確保 ID 唯一且包含所有資訊
+
+            // 2. 動態遍歷路線 (這裡示範抓取前 20 條路線，實際可改為全部)
+            for (let i = 0; i < 20; i++) {
+                const r = routes[i];
+                const stopRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${r.route}/${r.service_type}/${r.bound}`);
+                const { data: stops } = await stopRes.json();
                 
-                output.innerHTML = "";
-                if (!data || data.length === 0) {
-                    output.innerHTML = "目前沒有班次資訊";
-                } else {
-                    data.forEach(b => {
-                        const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
-                        const div = document.createElement('div');
-                        div.className = "card";
-                        div.innerHTML = `<strong>${b.route}</strong> 往 ${b.dest_tc} <span class="eta-time">${mins} 分鐘</span>`;
-                        output.appendChild(div);
-                    });
-                }
-            } catch (e) { output.innerHTML = "無法獲取班次"; }
+                stops.forEach(s => {
+                    if (!stopMap.has(s.stop)) {
+                        stopMap.set(s.stop, s);
+                    }
+                });
+            }
+
+            ui.innerHTML = `掃描完成！已發現 ${stopMap.size} 個動態站點。`;
+            // 接下來將這些動態抓到的 stopMap 轉為陣列，依距離排序即可
+            console.log(stopMap); 
         }
     </script>
 </body>
