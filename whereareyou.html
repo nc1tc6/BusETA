@@ -3,14 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>九巴到站搜尋器 (進階版)</title>
+    <title>九巴到站搜尋器 (原邏輯版)</title>
     <style>
         :root { --primary: #e31d2b; }
         body { font-family: -apple-system, sans-serif; background: #f4f4f9; padding: 15px; }
         .container { max-width: 500px; margin: auto; }
-        .control-group { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .input-row { display: flex; gap: 10px; margin-bottom: 10px; }
-        .group-title { font-size: 1.1rem; color: #333; margin: 20px 0 10px; font-weight: bold; border-left: 5px solid var(--primary); padding-left: 10px; }
+        .group-title { font-size: 1.2rem; color: #333; margin: 20px 0 10px; font-weight: bold; border-left: 5px solid var(--primary); padding-left: 10px; }
         .card { background: white; padding: 12px; margin: 8px 0; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
         .stop-name { font-size: 0.85rem; color: #666; font-weight: bold; margin-bottom: 5px; }
         .bus-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 0.9rem; }
@@ -19,15 +17,13 @@
 </head>
 <body>
     <div class="container">
-        <h3>九巴搜尋器</h3>
-        <div class="control-group">
-            <div class="input-row">
-                <input type="text" id="route" placeholder="路線 (如 6)" style="flex:2; padding:8px;">
-                <input type="number" id="radius" value="1.0" step="0.5" min="0.1" max="5.0" style="flex:1; padding:8px;" placeholder="半徑(km)">
-            </div>
-            <button onclick="startSearch()" style="width:100%; padding:10px; background:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer;">開始搜尋 (限最近 15 站)</button>
+        <h3>九巴搜尋 (按方向分組)</h3>
+        <div style="display:flex; gap:5px; margin-bottom: 10px;">
+            <input type="text" id="route" placeholder="路線 (如 6)" style="flex:1; padding:10px;">
+            <input type="number" id="radius" value="1.0" step="0.5" min="0.1" max="5.0" style="width: 70px; padding:10px;" placeholder="半徑(km)">
+            <button onclick="startSearch()" style="padding:10px; background:var(--primary); color:white; border:none; border-radius:4px;">搜尋</button>
         </div>
-        <div id="status" style="margin:10px 0; color:#666; text-align:center;"></div>
+        <div id="status" style="margin:10px 0; color:#666;"></div>
         <div id="output"></div>
     </div>
 
@@ -42,32 +38,24 @@
             const radius = parseFloat(document.getElementById('radius').value) || 1.0;
             const status = document.getElementById('status');
             const output = document.getElementById('output');
-            
-            if(!route) return alert("請輸入路線");
+            if(!route) return;
             
             output.innerHTML = "";
             status.innerText = "定位中...";
 
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude: lat, longitude: lon } = pos.coords;
-                status.innerText = "正在分析周邊車站...";
+                status.innerText = "查詢中...";
 
                 try {
                     const stopData = await fetchWithRetry('https://data.etabus.gov.hk/v1/transport/kmb/stop');
-                    
-                    // 計算距離並篩選半徑，最後限制只取最近的 15 個站以避免請求過多
+                    // 這裡完全依照您原本的計算與過濾邏輯，僅將 1.0 改為變數 radius
                     let allNearby = stopData.data.map(s => ({
                         ...s,
                         dist: Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111
-                    }))
-                    .filter(s => s.dist < radius)
-                    .sort((a, b) => a.dist - b.dist)
-                    .slice(0, 15);
-
-                    if (allNearby.length === 0) return status.innerText = "範圍內沒有車站";
+                    })).filter(s => s.dist < radius).sort((a, b) => a.dist - b.dist);
 
                     const directionMap = {}; 
-                    status.innerText = `正在查詢 ${allNearby.length} 個車站的數據...`;
 
                     for (let stop of allNearby) {
                         const data = await fetchWithRetry(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
@@ -77,7 +65,8 @@
                             if (!directionMap[b.dest_tc]) directionMap[b.dest_tc] = [];
                             
                             let stopEntry = directionMap[b.dest_tc].find(e => e.stop === stop.stop);
-                            if (!stopEntry && new Set(directionMap[b.dest_tc].map(i => i.stop)).size < 3) {
+                            
+                            if (!stopEntry && new Set(directionMap[b.dest_tc].map(i => i.stop)).size < 2) {
                                 stopEntry = { stop: stop.stop, name: stop.name_tc, dist: stop.dist, etas: [] };
                                 directionMap[b.dest_tc].push(stopEntry);
                             }
@@ -89,10 +78,10 @@
                         });
                     }
 
-                    // 渲染結果
                     for (const [dest, stops] of Object.entries(directionMap)) {
                         let groupHtml = `<div class="group-title">往 ${dest}</div>`;
                         let hasContent = false;
+
                         stops.forEach(s => {
                             if (s.etas.length > 0) {
                                 hasContent = true;
@@ -103,14 +92,15 @@
                                 groupHtml += html + `</div>`;
                             }
                         });
+
                         if (hasContent) output.innerHTML += groupHtml;
                     }
                     
-                    status.innerText = output.innerHTML ? "" : "目前沒有該路線班次";
-                } catch(e) { 
-                    status.innerText = "讀取失敗，請檢查網絡"; 
-                }
-            }, () => status.innerText = "無法取得位置");
+                    if (!output.innerHTML) status.innerText = "目前沒有即將到站的班次";
+                    else status.innerText = "";
+
+                } catch(e) { status.innerText = "讀取失敗"; }
+            });
         }
     </script>
 </body>
