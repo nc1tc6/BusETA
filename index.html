@@ -2,111 +2,77 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <title>九巴精準快查</title>
+    <title>九巴精準路線追蹤</title>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f4f4f4; padding: 10px; }
+        body { font-family: sans-serif; background: #f4f4f4; padding: 15px; }
         .card { background: white; padding: 12px; margin-bottom: 8px; border-radius: 8px; border-left: 5px solid #ccc; }
         .nearest { border-left-color: #e31d2b; background: #fff0f0; }
+        .title { font-weight: bold; margin: 20px 0 10px; color: #333; font-size: 1.2rem; }
         .eta-time { color: #e31d2b; font-weight: bold; }
-        .title { font-weight: bold; margin: 20px 0 10px; color: #333; }
     </style>
 </head>
 <body>
     <input type="text" id="route" placeholder="路線(如 6)">
     <button onclick="smartSearch()">查詢</button>
+    <div id="status"></div>
     <div id="output"></div>
 
     <script>
         async function smartSearch() {
-            const route = document.getElementById('route').value.trim().toUpperCase();
+            const routeInput = document.getElementById('route').value.trim().toUpperCase();
             const output = document.getElementById('output');
-            output.innerHTML = "查詢中...";
+            const status = document.getElementById('status');
+            
+            output.innerHTML = "";
+            status.innerText = "正在定位與分析...";
 
-            try {
-                const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej));
+            navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude: lat, longitude: lon } = pos.coords;
-
-                const routeRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route/${route}`);
-                const routeData = await routeRes.json();
                 
-                output.innerHTML = ""; // 清空查詢中
+                try {
+                    const routeRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route/${routeInput}`);
+                    const routeData = await routeRes.json();
+                    
+                    for (let r of routeData.data) {
+                        const stopsRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${r.route}/${r.service_type}/${r.bound}`);
+                        if (!stopsRes.ok) continue;
+                        const stopsData = await stopsRes.json();
+                        
+                        const allStopsRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop`);
+                        const allStops = await allStopsRes.json();
+                        
+                        let minD = Infinity, nearestIdx = 0;
+                        const sequence = stopsData.data.map((s, idx) => {
+                            const info = allStops.data.find(st => st.stop === s.stop);
+                            const d = Math.sqrt((info.lat - lat)**2 + (info.long - lon)**2);
+                            if(d < minD) { minD = d; nearestIdx = idx; }
+                            return { ...s, name: info.name_tc };
+                        });
 
-                for (let r of routeData.data) {
-                    // 獲取該路線該方向的序列 (避開錯誤的 API 呼叫)
-                    const stopsRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${r.route}/${r.service_type}/${r.bound}`);
-                    if (!stopsRes.ok) continue; 
-                    const stopsData = await stopsRes.json();
-                    
-                    const allStops = await (await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop`)).json();
-                    
-                    let minD = Infinity, nearestIdx = 0;
-                    const sequence = stopsData.data.map((s, idx) => {
-                        const info = allStops.data.find(st => st.stop === s.stop);
-                        if (!info) return null;
-                        const d = Math.sqrt((info.lat - lat)**2 + (info.long - lon)**2);
-                        if(d < minD) { minD = d; nearestIdx = idx; }
-                        return { ...s, name: info.name_tc };
-                    }).filter(s => s !== null);
-
-                    output.innerHTML += `<div class="title">往 ${r.dest_tc}</div>`;
-                    const indices = [nearestIdx - 1, nearestIdx, nearestIdx + 1];
-                    
-                    for (let i of indices) {
-                        if (sequence[i]) {
-                            const s = sequence[i];
-                            const etaRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${s.stop}`);
-                            const eta = etaRes.ok ? await etaRes.json() : { data: [] };
-                            const bus = (eta.data || []).find(b => b.route === route);
-                            const time = bus ? (Math.round((new Date(bus.eta) - new Date())/60000) <= 0 ? '到達' : Math.round((new Date(bus.eta)-new Date())/60000) + ' 分') : '-';
-                            
-                            output.innerHTML += `
-                                <div class="card ${i === nearestIdx ? 'nearest' : ''}">
-                                    ${s.name} <br>
-                                    <span class="eta-time">${time}</span>
-                                </div>`;
+                        output.innerHTML += `<div class="title">往 ${r.dest_tc}</div>`;
+                        const indices = [nearestIdx - 1, nearestIdx, nearestIdx + 1];
+                        
+                        for (let i of indices) {
+                            if (sequence[i]) {
+                                const s = sequence[i];
+                                const eta = await (await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${s.stop}`)).json();
+                                const bus = (eta.data || []).find(b => b.route === routeInput);
+                                const time = bus ? (Math.round((new Date(bus.eta) - new Date())/60000) <= 0 ? '到達' : Math.round((new Date(bus.eta)-new Date())/60000) + ' 分') : '-';
+                                
+                                output.innerHTML += `
+                                    <div class="card ${i === nearestIdx ? 'nearest' : ''}">
+                                        <b>${s.name}</b><br>
+                                        預計到達: <span class="eta-time">${time}</span>
+                                    </div>`;
+                            }
                         }
                     }
+                    status.innerText = "查詢完成";
+                } catch(e) {
+                    status.innerText = "發生錯誤，請檢查路線編號。";
+                    console.error(e);
                 }
-            } catch(e) {
-                output.innerHTML = "發生錯誤，請檢查路線號碼或定位權限。";
-                console.error(e);
-            }
-        }
-    </script>
-</body>
-</html>                    const stopsData = await (await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${r.route}/${r.service_type}/${r.bound}`)).json();
-                    const allStops = await (await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop`)).json();
-                    
-                    // 4. 計算距離並找出最近站點索引
-                    let minD = Infinity, nearestIdx = 0;
-                    const sequence = stopsData.data.map((s, idx) => {
-                        const info = allStops.data.find(st => st.stop === s.stop);
-                        const d = Math.sqrt((info.lat - lat)**2 + (info.long - lon)**2);
-                        if(d < minD) { minD = d; nearestIdx = idx; }
-                        return { ...s, name: info.name_tc };
-                    });
-
-                    // 5. 輸出 2-1-3 邏輯 (索引為 idx-1, idx, idx+1)
-                    output.innerHTML += `<h3>往 ${r.dest_tc}</h3>`;
-                    const indices = [nearestIdx - 1, nearestIdx, nearestIdx + 1];
-                    
-                    for (let i of indices) {
-                        if (sequence[i]) {
-                            const s = sequence[i];
-                            const eta = await (await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${s.stop}`)).json();
-                            const bus = (eta.data || []).find(b => b.route === route);
-                            const time = bus ? (Math.round((new Date(bus.eta) - new Date())/60000) <= 0 ? '到達' : Math.round((new Date(bus.eta)-new Date())/60000) + ' 分') : '-';
-                            
-                            output.innerHTML += `
-                                <div class="card ${i === nearestIdx ? 'nearest' : ''}">
-                                    <b>${s.name}</b> <br>
-                                    預計到達: <span class="eta-time">${time}</span>
-                                </div>`;
-                        }
-                    }
-                }
-                status.innerText = "查詢完成";
-            });
+            }, () => { status.innerText = "請開啟定位權限"; });
         }
     </script>
 </body>
