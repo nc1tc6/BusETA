@@ -1,69 +1,33 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
-<head>
-    <meta charset="UTF-8">
-    <title>九巴全站點動態搜尋</title>
-</head>
-<body onload="init()">
-    <div id="ui">掃描並整理站點中...</div>
+<body onload="getAllBusStops()">
+    <div id="status">正在從所有路線反向挖掘站點代碼... (這會花一點時間)</div>
+    <div id="list"></div>
 
     <script>
-        // 核心邏輯：使用全域快取避免重複請求
-        const stopCache = new Map();
-
-        async function init() {
-            const ui = document.getElementById('ui');
-            // 1. 取得全港站點 (基礎清單)
-            const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
-            const { data } = await res.json();
-            data.forEach(s => stopCache.set(s.stop, s));
-
-            // 2. 獲取定位
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                const { latitude: lat, longitude: lon } = pos.coords;
-                
-                // 3. 找出半徑內的站點
-                const nearby = Array.from(stopCache.values()).filter(s => {
-                    const dist = Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111;
-                    return dist < 1.0; // 限制在 500 米內以優化請求數量
-                });
-
-                // 4. 解決「讀取失敗」：改用批次處理，避免過度請求
-                displayStops(nearby);
-            });
-        }
-
-        async function displayStops(stops) {
-            const ui = document.getElementById('ui');
-            ui.innerHTML = "<h4>附近站點</h4>";
+        async function getAllBusStops() {
+            const status = document.getElementById('status');
+            const list = document.getElementById('list');
             
-            for (const s of stops) {
-                const div = document.createElement('div');
-                div.innerHTML = `<div>${s.name_tc} <small>(${s.stop})</small></div>`;
-                div.onclick = () => fetchEta(s.stop);
-                ui.appendChild(div);
-            }
-        }
-
-        async function fetchEta(stopId) {
-            const ui = document.getElementById('ui');
-            ui.innerHTML = "查詢中...";
+            // 1. 抓取所有路線
+            const routesRes = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/route/');
+            const routes = (await routesRes.json()).data;
             
-            try {
-                // 使用快取或直接請求
-                const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stopId}`);
-                const { data } = await res.json();
-                
-                // 檢查是否為空
-                if(!data || data.length === 0) {
-                    ui.innerHTML = "此站暫無預計班次。<br><button onclick='location.reload()'>返回</button>";
-                    return;
-                }
-                
-                // 顯示結果...
-            } catch (e) {
-                ui.innerHTML = "讀取失敗，請重新整理。<br><button onclick='location.reload()'>返回</button>";
+            const fullList = new Map();
+
+            // 2. 遍歷每條路線 (為了保護你的請求不被封鎖，我們分批抓)
+            for (let r of routes.slice(0, 50)) { // 示範：抓前 50 條路線
+                try {
+                    const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${r.route}/${r.service_type}/${r.bound}`);
+                    const data = (await res.json()).data;
+                    data.forEach(s => {
+                        if (!fullList.has(s.stop)) fullList.set(s.stop, s.stop);
+                    });
+                } catch(e) {}
             }
+            
+            status.innerHTML = `<h3>掃描完成，共找到 ${fullList.size} 個唯一代碼</h3>`;
+            list.innerHTML = Array.from(fullList.keys()).join('<br>');
         }
     </script>
 </body>
