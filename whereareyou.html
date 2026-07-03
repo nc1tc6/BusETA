@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>九巴到站搜尋器 (最終修正版)</title>
+    <title>九巴到站搜尋器</title>
     <style>
         :root { --primary: #e31d2b; }
         body { font-family: -apple-system, sans-serif; background: #f4f4f9; padding: 15px; }
@@ -13,6 +13,7 @@
         .stop-name { font-size: 0.85rem; color: #666; font-weight: bold; margin-bottom: 5px; }
         .bus-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 0.9rem; }
         .eta-time { font-weight: bold; color: var(--primary); }
+        .warning-box { background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -47,11 +48,16 @@
 
                 try {
                     const stopData = await fetchWithRetry('https://data.etabus.gov.hk/v1/transport/kmb/stop');
-                    let allNearby = stopData.data.map(s => ({
+                    
+                    // 計算所有站點距離
+                    let allStops = stopData.data.map(s => ({
                         ...s,
                         dist: Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111
-                    })).filter(s => s.dist < 1.0).sort((a, b) => a.dist - b.dist);
+                    })).sort((a, b) => a.dist - b.dist);
 
+                    // 1km 內的站點
+                    let allNearby = allStops.filter(s => s.dist < 1.0);
+                    
                     const directionMap = {}; 
 
                     for (let stop of allNearby) {
@@ -60,7 +66,6 @@
                         
                         buses.forEach(b => {
                             if (!directionMap[b.dest_tc]) directionMap[b.dest_tc] = [];
-                            
                             let stopEntry = directionMap[b.dest_tc].find(e => e.stop === stop.stop);
                             
                             if (!stopEntry && new Set(directionMap[b.dest_tc].map(i => i.stop)).size < 2) {
@@ -70,20 +75,20 @@
                             
                             if (stopEntry && stopEntry.etas.length < 3) {
                                 const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
-                                // 修正：只加入大於 0 分鐘的有效班次
                                 if (mins > 0) stopEntry.etas.push(mins);
                             }
                         });
                     }
 
-                    // 渲染
+                    // 渲染邏輯
+                    let renderedAny = false;
                     for (const [dest, stops] of Object.entries(directionMap)) {
-                        let groupHtml = `<div class="group-title">往 ${dest}</div>`;
                         let hasContent = false;
-
+                        let groupHtml = `<div class="group-title">往 ${dest}</div>`;
                         stops.forEach(s => {
                             if (s.etas.length > 0) {
                                 hasContent = true;
+                                renderedAny = true;
                                 let html = `<div class="card"><div class="stop-name">${s.name} (${s.dist.toFixed(2)}km)</div>`;
                                 s.etas.forEach(mins => {
                                     html += `<div class="bus-row"><span>預計到達</span><span class="eta-time">${mins} 分鐘</span></div>`;
@@ -91,12 +96,20 @@
                                 groupHtml += html + `</div>`;
                             }
                         });
-
                         if (hasContent) output.innerHTML += groupHtml;
                     }
                     
-                    if (!output.innerHTML) status.innerText = "目前沒有即將到站的班次";
-                    else status.innerText = "";
+                    // 錯誤與提示邏輯
+                    if (!renderedAny) {
+                        const nearest = allStops[0];
+                        status.innerHTML = `<div class="warning-box">
+                            <strong>搜尋結果：</strong><br>
+                            附近 1km 內沒有該路線班次。<br>
+                            距離您最近的站點是：<strong>${nearest.name_tc}</strong> (約 ${nearest.dist.toFixed(2)}km)
+                        </div>`;
+                    } else {
+                        status.innerText = "";
+                    }
 
                 } catch(e) { status.innerText = "讀取失敗"; }
             });
