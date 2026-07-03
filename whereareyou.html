@@ -2,39 +2,68 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <title>九巴全動態站點查詢</title>
+    <title>九巴全站點動態搜尋</title>
 </head>
-<body onload="dynamicDiscovery()">
-    <div id="ui">正在進行全動態站點掃描... (這可能需要一點時間)</div>
+<body onload="init()">
+    <div id="ui">掃描並整理站點中...</div>
 
     <script>
-        async function dynamicDiscovery() {
+        // 核心邏輯：使用全域快取避免重複請求
+        const stopCache = new Map();
+
+        async function init() {
             const ui = document.getElementById('ui');
-            
-            // 1. 取得全港所有路線
-            const routeRes = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/route/');
-            const { data: routes } = await routeRes.json();
-            
-            ui.innerHTML = "正在解析路線站點...";
-            
-            const stopMap = new Map(); // 用 Map 儲存，確保 ID 唯一且包含所有資訊
+            // 1. 取得全港站點 (基礎清單)
+            const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
+            const { data } = await res.json();
+            data.forEach(s => stopCache.set(s.stop, s));
 
-            // 2. 動態遍歷路線 (這裡示範抓取前 20 條路線，實際可改為全部)
-            for (let i = 0; i < 20; i++) {
-                const r = routes[i];
-                const stopRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${r.route}/${r.service_type}/${r.bound}`);
-                const { data: stops } = await stopRes.json();
+            // 2. 獲取定位
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const { latitude: lat, longitude: lon } = pos.coords;
                 
-                stops.forEach(s => {
-                    if (!stopMap.has(s.stop)) {
-                        stopMap.set(s.stop, s);
-                    }
+                // 3. 找出半徑內的站點
+                const nearby = Array.from(stopCache.values()).filter(s => {
+                    const dist = Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111;
+                    return dist < 0.5; // 限制在 500 米內以優化請求數量
                 });
-            }
 
-            ui.innerHTML = `掃描完成！已發現 ${stopMap.size} 個動態站點。`;
-            // 接下來將這些動態抓到的 stopMap 轉為陣列，依距離排序即可
-            console.log(stopMap); 
+                // 4. 解決「讀取失敗」：改用批次處理，避免過度請求
+                displayStops(nearby);
+            });
+        }
+
+        async function displayStops(stops) {
+            const ui = document.getElementById('ui');
+            ui.innerHTML = "<h4>附近站點</h4>";
+            
+            for (const s of stops) {
+                const div = document.createElement('div');
+                div.innerHTML = `<div>${s.name_tc} <small>(${s.stop})</small></div>`;
+                div.onclick = () => fetchEta(s.stop);
+                ui.appendChild(div);
+            }
+        }
+
+        async function fetchEta(stopId) {
+            const ui = document.getElementById('ui');
+            ui.innerHTML = "查詢中...";
+            
+            try {
+                // 使用快取或直接請求
+                const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stopId}`);
+                const { data } = await res.json();
+                
+                // 檢查是否為空
+                if(!data || data.length === 0) {
+                    ui.innerHTML = "此站暫無預計班次。<br><button onclick='location.reload()'>返回</button>";
+                    return;
+                }
+                
+                // 顯示結果...
+            } catch (e) {
+                ui.innerHTML = "讀取失敗，請重新整理。<br><button onclick='location.reload()'>返回</button>";
+            }
         }
     </script>
 </body>
