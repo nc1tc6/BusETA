@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>九巴到站搜尋器 (進階版)</title>
+    <title>九巴到站搜尋器</title>
     <style>
-        :root { --primary: #e31d2b; } /* 九巴紅 */
-        body { font-family: -apple-system, sans-serif; background: #f4f4f9; padding: 15px; }
+        :root { --primary: #e31d2b; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f4f4f9; padding: 15px; }
         .container { max-width: 500px; margin: auto; }
-        .card { background: white; padding: 16px; margin: 10px 0; border-radius: 12px; border-left: 5px solid var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .card { background: white; padding: 16px; margin: 10px 0; border-radius: 12px; border-left: 6px solid var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .header { display: flex; gap: 8px; margin-bottom: 15px; }
-        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; }
-        button { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; }
-        .stop-info { font-size: 0.85rem; color: #666; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        .bus-row { display: flex; justify-content: space-between; padding: 4px 0; }
+        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        button { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .stop-info { font-size: 0.9rem; color: #444; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px; font-weight: 600; }
+        .bus-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.95rem; }
         .eta-time { font-weight: bold; color: var(--primary); }
     </style>
 </head>
@@ -29,6 +29,7 @@
     </div>
 
     <script>
+        // 具備重試機制的 Fetch，解決偶發 Load failed
         async function fetchWithRetry(url, retries = 2) {
             try { const res = await fetch(url); return await res.json(); }
             catch (e) { if(retries > 0) return fetchWithRetry(url, retries - 1); throw e; }
@@ -38,35 +39,53 @@
             const route = document.getElementById('route').value.trim().toUpperCase();
             const status = document.getElementById('status');
             const output = document.getElementById('output');
-            if(!route) return;
+            if(!route) return alert("請輸入路線");
+            
+            output.innerHTML = "";
+            status.innerText = "定位中...";
 
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude: lat, longitude: lon } = pos.coords;
-                status.innerText = "搜尋中...";
-                
+                status.innerText = "正在搜尋附近站點...";
+
                 try {
                     const stopData = await fetchWithRetry('https://data.etabus.gov.hk/v1/transport/kmb/stop');
                     
-                    // 1. 計算距離並加入陣列
+                    // 1. 計算距離並排序
                     let nearby = stopData.data.map(s => ({
                         ...s,
-                        dist: Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111 // 簡單距離估算(km)
+                        dist: Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111
                     })).filter(s => s.dist < 0.8).sort((a, b) => a.dist - b.dist);
 
-                    if(nearby.length === 0) return status.innerText = "附近無站點";
+                    if(nearby.length === 0) return status.innerText = "附近沒有站點";
 
-                    // 2. 獲取 ETA
+                    status.innerText = "查詢到站時間...";
+
+                    // 2. 獲取 ETA 資料
                     const results = await Promise.all(nearby.map(async (stop) => {
                         const data = await fetchWithRetry(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
                         return { ...stop, buses: (data.data || []).filter(b => b.route === route) };
                     }));
 
-                    // 3. 渲染
+                    // 3. 渲染與限制數量
                     output.innerHTML = "";
                     status.innerText = "";
+                    
                     results.filter(r => r.buses.length > 0).forEach(s => {
-                        let html = `<div class="card"><div class="stop-info">${s.name_tc} | ${s.dist.toFixed(2)}km</div>`;
-                        s.buses.forEach(b => {
+                        // 按目的地分組，每組取前 2 個
+                        const grouped = s.buses.reduce((acc, b) => {
+                            if (!acc[b.dest_tc]) acc[b.dest_tc] = [];
+                            if (acc[b.dest_tc].length < 2) acc[b.dest_tc].push(b);
+                            return acc;
+                        }, {});
+
+                        // 攤平後限制總數為 4 個
+                        let displayBuses = [];
+                        Object.values(grouped).forEach(g => displayBuses.push(...g));
+                        displayBuses = displayBuses.slice(0, 4);
+
+                        let html = `<div class="card"><div class="stop-info">${s.name_tc} (${s.dist.toFixed(2)}km)</div>`;
+                        displayBuses.forEach(b => {
                             const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
                             html += `<div class="bus-row">
                                         <span>往 ${b.dest_tc}</span>
@@ -75,8 +94,12 @@
                         });
                         output.innerHTML += html + `</div>`;
                     });
-                } catch(e) { status.innerText = "讀取失敗"; }
-            });
+
+                    if(!output.innerHTML) status.innerText = "附近沒有該路線的班次";
+                } catch(err) {
+                    status.innerText = "讀取失敗，請重試";
+                }
+            }, () => status.innerText = "請允許定位權限以進行搜尋");
         }
     </script>
 </body>
