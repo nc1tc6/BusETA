@@ -25,7 +25,7 @@
                 // 3. 找出半徑內的站點
                 const nearby = Array.from(stopCache.values()).filter(s => {
                     const dist = Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111;
-                    return dist < 0.5; // 限制在 500 米內以優化請求數量
+                    return dist < 1.0; // 限制在 500 米內以優化請求數量
                 });
 
                 // 4. 解決「讀取失敗」：改用批次處理，避免過度請求
