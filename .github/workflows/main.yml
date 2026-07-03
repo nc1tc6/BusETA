@@ -9,9 +9,10 @@ jobs:
   update-data:
     runs-on: ubuntu-latest
     permissions:
-      contents: write       # 給予寫入權限，讓我們可以儲存 data.json
+      contents: write       # 必須要有寫入權限才能推送更新
+    
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Set up Python
@@ -22,13 +23,14 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: Run script
-        run: python get_bus.py  # 這裡要確保你的檔案真的叫 get_bus.py
+      - name: Run bus data script
+        run: python get_bus.py  # 確保根目錄下有這個檔案
 
       - name: Commit and push changes
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
-          # 如果 data.json 有變更，就自動推送到你的 repository
           git add data.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update bus data" && git push)
+          # 檢查 data.json 是否有實際變動
+          # 只有在有變動的情況下才進行 commit 和 push，避免浪費資源
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update bus data" && git push)
