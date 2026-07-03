@@ -1,91 +1,105 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Near by bus stop - KMB</title>
+    <title>九巴到站搜尋器 (最終修正版)</title>
     <style>
-        :root { --primary: #6366f1; --accent: #ec4899; --bg: #f1f5f9; }
-        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); margin: 0; color: #1e293b; }
-        .header { position: sticky; top: 0; z-index: 1000; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); padding: 16px; border-bottom: 2px solid #e2e8f0; }
-        .controls { display: flex; gap: 8px; max-width: 600px; margin: 0 auto; }
-        input { flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; }
-        button { padding: 12px 20px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; }
-        #status-bar { max-width: 600px; margin: 10px auto; padding: 0 16px; font-size: 0.9rem; color: #64748b; }
-        .container { max-width: 600px; margin: 10px auto; padding: 0 16px; }
-        .stop-card { background: white; padding: 20px; margin-bottom: 16px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border-left: 6px solid var(--primary); }
-        .eta-grid { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f8fafc; }
-        .dest { font-weight: 600; color: #334155; }
-        .mins { background: var(--accent); color: white; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 0.85rem; }
+        :root { --primary: #e31d2b; }
+        body { font-family: -apple-system, sans-serif; background: #f4f4f9; padding: 15px; }
+        .container { max-width: 500px; margin: auto; }
+        .group-title { font-size: 1.2rem; color: #333; margin: 20px 0 10px; font-weight: bold; border-left: 5px solid var(--primary); padding-left: 10px; }
+        .card { background: white; padding: 12px; margin: 8px 0; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+        .stop-name { font-size: 0.85rem; color: #666; font-weight: bold; margin-bottom: 5px; }
+        .bus-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 0.9rem; }
+        .eta-time { font-weight: bold; color: var(--primary); }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="controls">
-            <input type="text" id="routeInput" placeholder="Route (e.g. 35A)">
-            <button onclick="runSearch()">Find</button>
+    <div class="container">
+        <h3>九巴搜尋 (按方向分組)</h3>
+        <div style="display:flex; gap:5px;">
+            <input type="text" id="route" placeholder="路線 (如 6)" style="flex:1; padding:10px;">
+            <button onclick="startSearch()" style="padding:10px; background:var(--primary); color:white; border:none; border-radius:4px;">搜尋</button>
         </div>
+        <div id="status" style="margin:10px 0; color:#666;"></div>
+        <div id="output"></div>
     </div>
-    <div id="status-bar"></div>
-    <div class="container" id="results"></div>
 
     <script>
-        function setStatus(msg) { document.getElementById("status-bar").textContent = msg; }
-
-        async function runSearch() {
-            const route = document.getElementById("routeInput").value.toUpperCase();
-            const results = document.getElementById("results");
-            if(!route) return;
-
-            results.innerHTML = "";
-            setStatus("Locating and fetching route data...");
-
-            try {
-                // 1. 取得該路線的正確參數 (解決 422 錯誤)
-                const routeList = await (await fetch('https://data.etabus.gov.hk/v1/transport/kmb/route/')).json();
-                const routeInfo = routeList.data.find(r => r.route === route);
-                if (!routeInfo) throw new Error("Route not found.");
-
-                // 2. 獲取路線所有站點
-                const stopList = await (await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route}/${routeInfo.service_type}/${routeInfo.bound}`)).json();
-                const allStops = await (await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop')).json();
-
-                navigator.geolocation.getCurrentPosition(async (pos) => {
-                    const { latitude: lat, longitude: lon } = pos.coords;
-                    
-                    // 3. 找出路線中最近的 5 個站點
-                    const stopIds = stopList.data.map(s => s.stop);
-                    const nearby = allStops.data
-                        .filter(s => stopIds.includes(s.stop))
-                        .map(s => ({ ...s, dist: getDistance(lat, lon, s.lat, s.long) }))
-                        .sort((a, b) => a.dist - b.dist)
-                        .slice(0, 5);
-
-                    setStatus(nearby.length ? "" : "No stops found.");
-
-                    for (let stop of nearby) {
-                        const etaData = await (await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`)).json();
-                        const buses = (etaData.data || []).filter(b => b.route === route);
-                        
-                        if (buses.length > 0) {
-                            let html = `<div class="stop-card"><h3>${stop.name_tc} (${stop.dist.toFixed(2)} km)</h3>`;
-                            buses.slice(0, 3).forEach(b => {
-                                const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
-                                html += `<div class="eta-grid"><span class="dest">${b.dest_tc}</span><span class="mins">${mins} min</span></div>`;
-                            });
-                            results.innerHTML += html + `</div>`;
-                        }
-                    }
-                }, () => setStatus("Location access denied."));
-            } catch(e) { setStatus("Error: " + e.message); }
+        async function fetchWithRetry(url, retries = 2) {
+            try { const res = await fetch(url); return await res.json(); }
+            catch (e) { if(retries > 0) return fetchWithRetry(url, retries - 1); throw e; }
         }
 
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        async function startSearch() {
+            const route = document.getElementById('route').value.trim().toUpperCase();
+            const status = document.getElementById('status');
+            const output = document.getElementById('output');
+            if(!route) return;
+            
+            output.innerHTML = "";
+            status.innerText = "定位中...";
+
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const { latitude: lat, longitude: lon } = pos.coords;
+                status.innerText = "查詢中...";
+
+                try {
+                    const stopData = await fetchWithRetry('https://data.etabus.gov.hk/v1/transport/kmb/stop');
+                    let allNearby = stopData.data.map(s => ({
+                        ...s,
+                        dist: Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111
+                    })).filter(s => s.dist < 1.0).sort((a, b) => a.dist - b.dist);
+
+                    const directionMap = {}; 
+
+                    for (let stop of allNearby) {
+                        const data = await fetchWithRetry(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
+                        const buses = (data.data || []).filter(b => b.route === route);
+                        
+                        buses.forEach(b => {
+                            if (!directionMap[b.dest_tc]) directionMap[b.dest_tc] = [];
+                            
+                            let stopEntry = directionMap[b.dest_tc].find(e => e.stop === stop.stop);
+                            
+                            if (!stopEntry && new Set(directionMap[b.dest_tc].map(i => i.stop)).size < 2) {
+                                stopEntry = { stop: stop.stop, name: stop.name_tc, dist: stop.dist, etas: [] };
+                                directionMap[b.dest_tc].push(stopEntry);
+                            }
+                            
+                            if (stopEntry && stopEntry.etas.length < 3) {
+                                const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
+                                // 修正：只加入大於 0 分鐘的有效班次
+                                if (mins > 0) stopEntry.etas.push(mins);
+                            }
+                        });
+                    }
+
+                    // 渲染
+                    for (const [dest, stops] of Object.entries(directionMap)) {
+                        let groupHtml = `<div class="group-title">往 ${dest}</div>`;
+                        let hasContent = false;
+
+                        stops.forEach(s => {
+                            if (s.etas.length > 0) {
+                                hasContent = true;
+                                let html = `<div class="card"><div class="stop-name">${s.name} (${s.dist.toFixed(2)}km)</div>`;
+                                s.etas.forEach(mins => {
+                                    html += `<div class="bus-row"><span>預計到達</span><span class="eta-time">${mins} 分鐘</span></div>`;
+                                });
+                                groupHtml += html + `</div>`;
+                            }
+                        });
+
+                        if (hasContent) output.innerHTML += groupHtml;
+                    }
+                    
+                    if (!output.innerHTML) status.innerText = "目前沒有即將到站的班次";
+                    else status.innerText = "";
+
+                } catch(e) { status.innerText = "讀取失敗"; }
+            });
         }
     </script>
 </body>
