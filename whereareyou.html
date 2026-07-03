@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>九巴到站搜尋器 (進階分組版)</title>
+    <title>九巴到站搜尋器 (最終修正版)</title>
     <style>
         :root { --primary: #e31d2b; }
         body { font-family: -apple-system, sans-serif; background: #f4f4f9; padding: 15px; }
@@ -61,34 +61,43 @@
                         buses.forEach(b => {
                             if (!directionMap[b.dest_tc]) directionMap[b.dest_tc] = [];
                             
-                            // 查找此目的地是否已有該站點
                             let stopEntry = directionMap[b.dest_tc].find(e => e.stop === stop.stop);
                             
-                            // 若該方向站點數 < 2 且站點未加入，則加入
                             if (!stopEntry && new Set(directionMap[b.dest_tc].map(i => i.stop)).size < 2) {
                                 stopEntry = { stop: stop.stop, name: stop.name_tc, dist: stop.dist, etas: [] };
                                 directionMap[b.dest_tc].push(stopEntry);
                             }
                             
-                            // 若找到站點且 ETA 記錄 < 3，加入 ETA
                             if (stopEntry && stopEntry.etas.length < 3) {
                                 const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
-                                stopEntry.etas.push(mins);
+                                // 修正：只加入大於 0 分鐘的有效班次
+                                if (mins > 0) stopEntry.etas.push(mins);
                             }
                         });
                     }
 
                     // 渲染
                     for (const [dest, stops] of Object.entries(directionMap)) {
-                        output.innerHTML += `<div class="group-title">往 ${dest}</div>`;
+                        let groupHtml = `<div class="group-title">往 ${dest}</div>`;
+                        let hasContent = false;
+
                         stops.forEach(s => {
-                            let html = `<div class="card"><div class="stop-name">${s.name} (${s.dist.toFixed(2)}km)</div>`;
-                            s.etas.forEach(mins => {
-                                html += `<div class="bus-row"><span>預計到達</span><span class="eta-time">${mins} 分鐘</span></div>`;
-                            });
-                            output.innerHTML += html + `</div>`;
+                            if (s.etas.length > 0) {
+                                hasContent = true;
+                                let html = `<div class="card"><div class="stop-name">${s.name} (${s.dist.toFixed(2)}km)</div>`;
+                                s.etas.forEach(mins => {
+                                    html += `<div class="bus-row"><span>預計到達</span><span class="eta-time">${mins} 分鐘</span></div>`;
+                                });
+                                groupHtml += html + `</div>`;
+                            }
                         });
+
+                        if (hasContent) output.innerHTML += groupHtml;
                     }
+                    
+                    if (!output.innerHTML) status.innerText = "目前沒有即將到站的班次";
+                    else status.innerText = "";
+
                 } catch(e) { status.innerText = "讀取失敗"; }
             });
         }
