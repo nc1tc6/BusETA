@@ -1,38 +1,63 @@
-<script>
-    fetch('data.json?t=' + new Date().getTime())
-        .then(res => res.json())
-        .then(data => {
-            const listDiv = document.getElementById('bus-list');
-            const statusH1 = document.getElementById('status');
-            
-            // 九巴數據通常藏在 data.data 陣列裡
-            const busArray = data.data || []; 
-            
-            if (busArray.length === 0) {
-                listDiv.innerHTML = "目前沒有到站資料。";
-                return;
-            }
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>巴士到站系統</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
+        .bus-card { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
 
-            statusH1.innerText = "巴士實時到站時間";
-            listDiv.innerHTML = ''; // 清空測試文字
+    <h1 id="status">正在載入數據...</h1>
+    <div id="bus-list"></div>
 
-            busArray.forEach(item => {
-                const card = document.createElement('div');
-                card.style.border = "1px solid #ccc";
-                card.style.padding = "10px";
-                card.style.margin = "5px";
-                card.style.borderRadius = "5px";
-                
-                // 這裡選出我們想看的欄位
-                card.innerHTML = `
-                    <strong>路線: ${item.route}</strong><br>
-                    目的地: ${item.dest_en}<br>
-                    預計到達: ${new Date(item.eta).toLocaleTimeString()}
-                `;
-                listDiv.appendChild(card);
-            });
-        })
-        .catch(err => {
-            document.getElementById('status').innerText = "發生錯誤: " + err.message;
+    <script>
+        // 確保網頁架構已完全載入
+        document.addEventListener("DOMContentLoaded", function() {
+            
+            fetch('data.json?t=' + new Date().getTime())
+                .then(response => {
+                    if (!response.ok) throw new Error("讀取 data.json 失敗");
+                    return response.json();
+                })
+                .then(data => {
+                    const status = document.getElementById('status');
+                    const list = document.getElementById('bus-list');
+                    
+                    // 檢查數據是否存在
+                    const items = data.data || [];
+                    
+                    if (items.length === 0) {
+                        status.innerText = "目前沒有到站資料";
+                        return;
+                    }
+
+                    status.innerText = "巴士實時到站時間";
+                    list.innerHTML = ''; // 清空載入中文字
+
+                    items.forEach(item => {
+                        const card = document.createElement('div');
+                        card.className = 'bus-card';
+                        
+                        // 處理時間顯示
+                        const timeStr = item.eta ? new Date(item.eta).toLocaleTimeString('zh-HK', {hour: '2-digit', minute:'2-digit'}) : '無資料';
+                        
+                        card.innerHTML = `
+                            <strong>路線: ${item.route}</strong><br>
+                            目的地: ${item.dest_en}<br>
+                            預計到達: ${timeStr}
+                        `;
+                        list.appendChild(card);
+                    });
+                })
+                .catch(error => {
+                    document.getElementById('status').innerText = "發生錯誤: " + error.message;
+                    console.error("錯誤:", error);
+                });
         });
-</script>
+    </script>
+</body>
+</html>
