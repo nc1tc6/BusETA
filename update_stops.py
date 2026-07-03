@@ -26,11 +26,17 @@ def get_ctb_stops():
             url = f"https://rt.data.gov.hk/v1/transport/citybus-nwfb/route-stop/CTB/{route_id}/outbound"
             res = requests.get(url, headers=HEADERS, timeout=10)
             if res.status_code == 200:
-                for s in res.json().get('data', []):
+                data = res.json().get('data', [])
+                for s in data:
                     stop_id = s.get('stop')
-                    # 多重備援：嘗試抓取不同名稱欄位
-                    name = s.get('name_en') or s.get('name_chi') or s.get('name_tc')
-                    if stop_id and stop_id not in seen:
+                    # 【除錯關鍵】如果這裡印出的 s 沒有 name 欄位，我們就知道原因了
+                    if stop_id not in seen:
+                        # 嘗試打印第一個車站的結構，幫你確認 Key 的名稱
+                        if len(seen) == 0:
+                            print(f"城巴車站資料結構樣本: {s.keys()}")
+                        
+                        # 使用 API 回傳的實際 key，如果沒有 name，則給予預設值
+                        name = s.get('name_en') or s.get('name_tc') or "Unknown Stop"
                         all_ctb.append({"name": name, "id": stop_id, "type": "CTB"})
                         seen.add(stop_id)
             time.sleep(0.05)
