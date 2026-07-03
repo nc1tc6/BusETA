@@ -3,23 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Near by bus stop - KMB</title>
+    <title>KMB Bus Finder (Stable)</title>
     <style>
         :root { --primary: #6366f1; --accent: #ec4899; --bg: #f1f5f9; }
         body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); margin: 0; color: #1e293b; }
-        
         .header { position: sticky; top: 0; z-index: 1000; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); padding: 16px; border-bottom: 2px solid #e2e8f0; }
         .controls { display: flex; gap: 8px; max-width: 600px; margin: 0 auto; }
-        
-        input { flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; }
-        select { padding: 12px; border-radius: 12px; border: 2px solid #e2e8f0; background: white; }
+        input { flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; }
         button { padding: 12px 20px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; }
-
         #status-bar { max-width: 600px; margin: 10px auto; padding: 0 16px; font-size: 0.9rem; color: #64748b; }
         .container { max-width: 600px; margin: 10px auto; padding: 0 16px; }
         .stop-card { background: white; padding: 20px; margin-bottom: 16px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border-left: 6px solid var(--primary); }
-        .eta-grid { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f8fafc; }
-        .dest { font-weight: 600; color: #334155; }
+        .eta-grid { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f8fafc; }
         .mins { background: var(--accent); color: white; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 0.85rem; }
     </style>
 </head>
@@ -27,12 +22,7 @@
 
     <div class="header">
         <div class="controls">
-            <input type="text" id="routeInput" placeholder="Route (e.g. 6)">
-            <select id="langSelect">
-                <option value="en">EN</option>
-                <option value="tc">繁體</option>
-                <option value="sc">简体</option>
-            </select>
+            <input type="text" id="routeInput" placeholder="Route (e.g. 35A)">
             <button onclick="runSearch()">Find</button>
         </div>
     </div>
@@ -41,55 +31,68 @@
     <div class="container" id="results"></div>
 
     <script>
+        const PROXY = "https://corsproxy.io/?";
+
+        async function fetchKMB(url) {
+            return await fetch(PROXY + encodeURIComponent(url));
+        }
+
         function setStatus(msg) { document.getElementById("status-bar").textContent = msg; }
 
         async function runSearch() {
             const route = document.getElementById("routeInput").value.toUpperCase();
-            const lang = document.getElementById("langSelect").value;
             if(!route) return;
 
             const results = document.getElementById("results");
             results.innerHTML = ""; 
-            setStatus("Locating...");
+            setStatus("Locating and fetching route info...");
 
-            const langMap = { en: 'name_en', tc: 'name_tc', sc: 'name_sc' };
-            const destMap = { en: 'dest_en', tc: 'dest_tc', sc: 'dest_sc' };
+            try {
+                // 1. 取得該路線的官方參數，解決 422 Invalid direction 錯誤
+                const routeListRes = await fetchKMB('https://data.etabus.gov.hk/v1/transport/kmb/route/');
+                const routeList = await routeListRes.json();
+                const routeInfo = routeList.data.find(r => r.route === route);
+                if (!routeInfo) throw new Error("Route not found in official list.");
 
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                try {
-                    setStatus("Fetching data...");
-                    const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
-                    const { data: allStops } = await res.json();
+                // 2. 獲取路線站點列表
+                const stopsRes = await fetchKMB(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route}/${routeInfo.service_type}/${routeInfo.bound}`);
+                const stopsJson = await stopsRes.json();
+                const stopIds = stopsJson.data.map(s => s.stop);
 
-                    const nearby = allStops.filter(s => getDistance(pos.coords.latitude, pos.coords.longitude, s.lat, s.long) < 0.5);
+                // 3. 獲取位置並搜尋附近 10KM (放寬範圍)
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const { latitude: lat, longitude: lon } = pos.coords;
+                    const allStops = await (await fetchKMB('https://data.etabus.gov.hk/v1/transport/kmb/stop')).json();
                     
-                    if (nearby.length === 0) setStatus("No stops found nearby.");
+                    const nearby = allStops.data
+                        .filter(s => stopIds.includes(s.stop))
+                        .map(s => ({ ...s, dist: getDist(lat, lon, s.lat, s.long) }))
+                        .filter(s => s.dist < 10) // 搜尋半徑 10KM
+                        .sort((a, b) => a.dist - b.dist)
+                        .slice(0, 5);
+
+                    if (nearby.length === 0) setStatus("No route stops found nearby.");
                     else setStatus("");
 
                     for (let stop of nearby) {
-                        const etaRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
-                        const { data: etaData } = await etaRes.json();
-                        const buses = etaData.filter(b => b.route === route);
+                        const etaRes = await fetchKMB(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
+                        const etaJson = await etaRes.json();
+                        const buses = (etaJson.data || []).filter(b => b.route === route);
                         
                         if (buses.length > 0) {
-                            let stopName = stop[langMap[lang]] || stop.name_en;
-                            let html = `<div class="stop-card"><h3>${stopName}</h3>`;
-                            
+                            let html = `<div class="stop-card"><h3>${stop.name_tc} (${stop.dist.toFixed(2)} km)</h3>`;
                             buses.slice(0, 3).forEach(b => {
                                 const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
-                                let destName = b[destMap[lang]] || b.dest_en;
-                                html += `<div class="eta-grid"><span class="dest">${destName}</span><span class="mins">${mins} min</span></div>`;
+                                html += `<div class="eta-grid"><span>${b.dest_tc}</span><span class="mins">${mins} min</span></div>`;
                             });
                             results.innerHTML += html + `</div>`;
                         }
                     }
-                } catch(e) {
-                    setStatus("Error loading data.");
-                }
-            }, () => setStatus("Location access denied."));
+                }, () => setStatus("Location access denied."));
+            } catch(e) { setStatus("Error: " + e.message); }
         }
 
-        function getDistance(lat1, lon1, lat2, lon2) {
+        function getDist(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
