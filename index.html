@@ -11,7 +11,7 @@
         input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
         button { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .container { max-width: 500px; margin: auto; padding: 10px; }
-        .group-title { font-size: 0.9rem; font-weight: bold; color: #666; margin: 20px 0 8px; }
+        .group-title { font-size: 0.95rem; font-weight: bold; color: #444; margin: 25px 0 10px; border-left: 4px solid var(--primary); padding-left: 10px; }
         .card { background: white; padding: 12px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
         .stop-name { font-size: 0.95rem; font-weight: bold; color: #333; }
@@ -24,7 +24,7 @@
 <body>
 
     <div class="header">
-        <input type="text" id="route" placeholder="路線號碼..." maxlength="5">
+        <input type="text" id="route" placeholder="路線號碼 (如 6)" maxlength="5">
         <button onclick="startSearch()">搜尋</button>
     </div>
 
@@ -62,7 +62,7 @@
                     let nearbyStops = stopData.data.map(s => ({
                         ...s,
                         dist: Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111
-                    })).filter(s => s.dist < 2.0); // 擴大掃描半徑以確保能選出遠至近的 3 個站
+                    })).filter(s => s.dist < 2.0); 
 
                     const directionMap = {};
                     for (let stop of nearbyStops) {
@@ -71,7 +71,6 @@
                         
                         const buses = data.data.filter(b => b.route === route);
                         buses.forEach(b => {
-                            // 使用 route + dest_tc 作為唯一方向標識，避免同名站點混淆
                             const key = `${b.route}_${b.dest_tc}`;
                             if (!directionMap[key]) directionMap[key] = { dest: b.dest_tc, stops: [] };
                             
@@ -88,8 +87,8 @@
                     let html = "";
                     for (const [key, group] of Object.entries(directionMap)) {
                         html += `<div class="group-title">往 ${group.dest}</div>`;
-                        // 排序：距離大到小 (遠到近)，並取前 3 個
-                        group.stops.sort((a, b) => b.dist - a.dist).slice(0, 3).forEach(s => {
+                        // 移除 .slice(0, 3) 限制，改為僅按距離排序 (由遠至近)
+                        group.stops.sort((a, b) => b.dist - a.dist).forEach(s => {
                             html += `<div class="card">
                                 <div class="row-top">
                                     <span class="stop-name">${s.name}</span>
@@ -101,10 +100,10 @@
                             </div>`;
                         });
                     }
-                    output.innerHTML = html || "找不到班次";
+                    output.innerHTML = html || "找不到相關班次";
                     status.innerText = "";
                 } catch(e) { status.innerText = "查詢失敗"; }
-            }, () => { status.innerText = "請允許定位權限"; });
+            }, () => { status.innerText = "無法定位"; });
         }
     </script>
 </body>
