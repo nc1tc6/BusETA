@@ -3,23 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>九巴到站搜尋器 (精簡版)</title>
+    <title>九巴到站搜尋器 (進階分組版)</title>
     <style>
         :root { --primary: #e31d2b; }
         body { font-family: -apple-system, sans-serif; background: #f4f4f9; padding: 15px; }
         .container { max-width: 500px; margin: auto; }
-        .card { background: white; padding: 16px; margin: 10px 0; border-radius: 12px; border-left: 6px solid var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .group-title { font-size: 1.1rem; color: #333; margin: 20px 0 10px; font-weight: bold; border-bottom: 2px solid #ccc; padding-bottom: 5px; }
-        .bus-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.95rem; }
+        .group-title { font-size: 1.2rem; color: #333; margin: 20px 0 10px; font-weight: bold; border-left: 5px solid var(--primary); padding-left: 10px; }
+        .card { background: white; padding: 12px; margin: 8px 0; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+        .stop-name { font-size: 0.85rem; color: #666; font-weight: bold; margin-bottom: 5px; }
+        .bus-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 0.9rem; }
         .eta-time { font-weight: bold; color: var(--primary); }
     </style>
 </head>
 <body>
     <div class="container">
         <h3>九巴搜尋 (按方向分組)</h3>
-        <input type="text" id="route" placeholder="輸入路線 (如 6)" style="width: 70%; padding: 10px;">
-        <button onclick="startSearch()" style="padding: 10px;">搜尋</button>
-        <div id="status"></div>
+        <div style="display:flex; gap:5px;">
+            <input type="text" id="route" placeholder="路線 (如 6)" style="flex:1; padding:10px;">
+            <button onclick="startSearch()" style="padding:10px; background:var(--primary); color:white; border:none; border-radius:4px;">搜尋</button>
+        </div>
+        <div id="status" style="margin:10px 0; color:#666;"></div>
         <div id="output"></div>
     </div>
 
@@ -44,15 +47,12 @@
 
                 try {
                     const stopData = await fetchWithRetry('https://data.etabus.gov.hk/v1/transport/kmb/stop');
-                    
-                    // 1. 獲取所有站點並計算距離
                     let allNearby = stopData.data.map(s => ({
                         ...s,
                         dist: Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111
                     })).filter(s => s.dist < 1.0).sort((a, b) => a.dist - b.dist);
 
-                    // 2. 獲取每個站點的 ETA 並依目的地歸類 (Group by Direction)
-                    const directionMap = {}; // 格式: { "往尖沙咀": [站點1, 站點2] }
+                    const directionMap = {}; 
 
                     for (let stop of allNearby) {
                         const data = await fetchWithRetry(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
@@ -61,35 +61,34 @@
                         buses.forEach(b => {
                             if (!directionMap[b.dest_tc]) directionMap[b.dest_tc] = [];
                             
-                            // 檢查是否已包含此站點，且該方向站點數 < 2
-                            const isNewStop = !directionMap[b.dest_tc].find(item => item.stop === stop.stop);
-                            const stopsCount = new Set(directionMap[b.dest_tc].map(i => i.stop)).size;
+                            // 查找此目的地是否已有該站點
+                            let stopEntry = directionMap[b.dest_tc].find(e => e.stop === stop.stop);
                             
-                            if (isNewStop && stopsCount < 2) {
-                                directionMap[b.dest_tc].push({ ...stop, bus: b });
+                            // 若該方向站點數 < 2 且站點未加入，則加入
+                            if (!stopEntry && new Set(directionMap[b.dest_tc].map(i => i.stop)).size < 2) {
+                                stopEntry = { stop: stop.stop, name: stop.name_tc, dist: stop.dist, etas: [] };
+                                directionMap[b.dest_tc].push(stopEntry);
+                            }
+                            
+                            // 若找到站點且 ETA 記錄 < 3，加入 ETA
+                            if (stopEntry && stopEntry.etas.length < 3) {
+                                const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
+                                stopEntry.etas.push(mins);
                             }
                         });
                     }
 
-                    // 3. 渲染結果
-                    output.innerHTML = "";
-                    status.innerText = "";
-                    
-                    for (const [dest, items] of Object.entries(directionMap)) {
+                    // 渲染
+                    for (const [dest, stops] of Object.entries(directionMap)) {
                         output.innerHTML += `<div class="group-title">往 ${dest}</div>`;
-                        items.forEach(item => {
-                            const mins = Math.max(0, Math.round((new Date(item.bus.eta) - new Date()) / 60000));
-                            output.innerHTML += `
-                                <div class="card">
-                                    <div style="font-size:0.8rem">${item.name_tc} (${item.dist.toFixed(2)}km)</div>
-                                    <div class="bus-row">
-                                        <span>預計到達</span>
-                                        <span class="eta-time">${mins} 分鐘</span>
-                                    </div>
-                                </div>`;
+                        stops.forEach(s => {
+                            let html = `<div class="card"><div class="stop-name">${s.name} (${s.dist.toFixed(2)}km)</div>`;
+                            s.etas.forEach(mins => {
+                                html += `<div class="bus-row"><span>預計到達</span><span class="eta-time">${mins} 分鐘</span></div>`;
+                            });
+                            output.innerHTML += html + `</div>`;
                         });
                     }
-
                 } catch(e) { status.innerText = "讀取失敗"; }
             });
         }
