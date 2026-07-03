@@ -3,25 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>九巴快查 - 最終版</title>
+    <title>九巴快查</title>
     <style>
         :root { --primary: #e31d2b; }
-        body { font-family: -apple-system, sans-serif; background: #f0f0f0; margin: 0; padding: 0; }
+        body { font-family: -apple-system, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
         .header { position: sticky; top: 0; background: #fff; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 100; display: flex; gap: 8px; }
         input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
         button { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        
         .container { max-width: 500px; margin: auto; padding: 10px; }
-        .group-title { font-size: 0.9rem; font-weight: bold; color: #666; margin: 20px 0 8px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
-        .card { background: white; padding: 12px; margin-bottom: 8px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .stop-info { font-size: 0.95rem; font-weight: 500; }
-        .eta-time { font-size: 0.9rem; font-weight: bold; color: var(--primary); background: #fff0f0; padding: 3px 8px; border-radius: 4px; margin-left: 5px; }
-        #status { text-align: center; margin: 20px; color: #666; font-size: 0.9rem; }
+        .group-title { font-size: 0.9rem; font-weight: bold; color: #666; margin: 20px 0 8px; }
+        
+        /* 調整卡片樣式以支援兩行顯示 */
+        .card { background: white; padding: 12px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .stop-name { font-size: 0.95rem; font-weight: bold; color: #333; }
+        .stop-dist { font-size: 0.8rem; color: #888; }
+        .row-bottom { display: flex; gap: 8px; }
+        .eta-time { font-size: 0.9rem; color: var(--primary); background: #fff0f0; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
+        
+        #status { text-align: center; margin: 20px; color: #666; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <input type="text" id="route" placeholder="路線號碼..." maxlength="5">
+        <input type="text" id="route" placeholder="路線號碼 (如 6)" maxlength="5">
         <button onclick="startSearch()">搜尋</button>
     </div>
 
@@ -31,14 +38,13 @@
     </div>
 
     <script>
-        // 自動重試機制
         async function fetchWithRetry(url, retries = 3) {
             for (let i = 0; i < retries; i++) {
                 try {
                     const res = await fetch(url);
                     if (res.ok) return await res.json();
                 } catch (e) { if (i === retries - 1) throw e; }
-                await new Promise(r => setTimeout(r, 800)); // 等待 0.8 秒重試
+                await new Promise(r => setTimeout(r, 800));
             }
         }
 
@@ -49,69 +55,56 @@
             if(!route) return;
             
             output.innerHTML = "";
-            status.innerText = "正在取得定位...";
+            status.innerText = "正在定位...";
 
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude: lat, longitude: lon } = pos.coords;
-                status.innerText = "搜尋附近站點...";
+                status.innerText = "搜尋中...";
 
                 try {
                     const stopData = await fetchWithRetry('https://data.etabus.gov.hk/v1/transport/kmb/stop');
-                    
-                    // 計算距離並篩選 1.5km 內的站點
                     let nearbyStops = stopData.data.map(s => ({
                         ...s,
-                        dist: Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2)
-                    })).filter(s => s.dist < 0.02).sort((a, b) => a.dist - b.dist);
+                        dist: Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111
+                    })).filter(s => s.dist < 1.5).sort((a, b) => a.dist - b.dist);
 
-                    status.innerText = "獲取班次中...";
                     const directionMap = {};
-
                     for (let stop of nearbyStops) {
                         const data = await fetchWithRetry(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
-                        if (!data || !data.data) continue;
+                        if (!data?.data) continue;
                         
                         const buses = data.data.filter(b => b.route === route);
                         buses.forEach(b => {
                             if (!directionMap[b.dest_tc]) directionMap[b.dest_tc] = [];
-                            
                             let entry = directionMap[b.dest_tc].find(e => e.stop === stop.stop);
                             if (!entry) {
-                                entry = { stop: stop.stop, name: stop.name_tc, dist: stop.dist, etas: [] };
+                                entry = { name: stop.name_tc, dist: stop.dist, etas: [] };
                                 directionMap[b.dest_tc].push(entry);
                             }
-                            
                             const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
-                            if (mins >= 0 && entry.etas.length < 2) entry.etas.push(mins);
+                            if (mins >= 0 && entry.etas.length < 3) entry.etas.push(mins);
                         });
                     }
 
-                    // 渲染結果：每個方向只取距離最近的 3 個站
                     let html = "";
-                    const destinations = Object.keys(directionMap);
-                    
-                    if (destinations.length === 0) {
-                        status.innerText = "附近沒有該路線的班次";
-                        return;
-                    }
-
-                    destinations.forEach(dest => {
+                    for (const [dest, stops] of Object.entries(directionMap)) {
                         html += `<div class="group-title">往 ${dest}</div>`;
-                        directionMap[dest]
-                            .sort((a, b) => a.dist - b.dist)
-                            .slice(0, 3)
-                            .forEach(s => {
-                                html += `<div class="card">
-                                    <div class="stop-info">${s.name}</div>
-                                    <div>${s.etas.map(m => `<span class="eta-time">${m}分</span>`).join('')}</div>
-                                </div>`;
-                            });
-                    });
-
-                    output.innerHTML = html;
+                        stops.sort((a, b) => a.dist - b.dist).slice(0, 3).forEach(s => {
+                            html += `<div class="card">
+                                <div class="row-top">
+                                    <span class="stop-name">${s.name}</span>
+                                    <span class="stop-dist">${s.dist.toFixed(2)} km</span>
+                                </div>
+                                <div class="row-bottom">
+                                    ${s.etas.map(m => `<span class="eta-time">${m} 分鐘</span>`).join('')}
+                                </div>
+                            </div>`;
+                        });
+                    }
+                    output.innerHTML = html || "找不到相關班次";
                     status.innerText = "";
-                } catch(e) { status.innerText = "查詢失敗，請檢查網絡連線"; }
-            }, () => { status.innerText = "無法定位：請確認已開啟位置權限"; });
+                } catch(e) { status.innerText = "查詢失敗"; }
+            }, () => { status.innerText = "無法定位"; });
         }
     </script>
 </body>
