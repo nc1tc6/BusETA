@@ -1,31 +1,38 @@
-<!DOCTYPE html>
-<html lang="zh-HK">
-<head>
-    <meta charset="UTF-8">
-    <title>巴士到站系統</title>
-</head>
-<body>
+<script>
+    fetch('data.json?t=' + new Date().getTime())
+        .then(res => res.json())
+        .then(data => {
+            const listDiv = document.getElementById('bus-list');
+            const statusH1 = document.getElementById('status');
+            
+            // 九巴數據通常藏在 data.data 陣列裡
+            const busArray = data.data || []; 
+            
+            if (busArray.length === 0) {
+                listDiv.innerHTML = "目前沒有到站資料。";
+                return;
+            }
 
-    <h1 id="status">正在載入中...</h1>
-    <div id="bus-list"></div>
+            statusH1.innerText = "巴士實時到站時間";
+            listDiv.innerHTML = ''; // 清空測試文字
 
-    <script>
-        fetch('data.json?t=' + new Date().getTime())
-            .then(res => res.json())
-            .then(data => {
-                const listDiv = document.getElementById('bus-list');
-                const statusH1 = document.getElementById('status');
+            busArray.forEach(item => {
+                const card = document.createElement('div');
+                card.style.border = "1px solid #ccc";
+                card.style.padding = "10px";
+                card.style.margin = "5px";
+                card.style.borderRadius = "5px";
                 
-                if (listDiv) {
-                    statusH1.innerText = "數據已更新";
-                    listDiv.innerText = "成功取得數據: " + JSON.stringify(data).substring(0, 50);
-                } else {
-                    console.error("找不到 ID 為 bus-list 的元素");
-                }
-            })
-            .catch(err => {
-                document.getElementById('status').innerText = "發生錯誤: " + err.message;
+                // 這裡選出我們想看的欄位
+                card.innerHTML = `
+                    <strong>路線: ${item.route}</strong><br>
+                    目的地: ${item.dest_en}<br>
+                    預計到達: ${new Date(item.eta).toLocaleTimeString()}
+                `;
+                listDiv.appendChild(card);
             });
-    </script>
-</body>
-</html>
+        })
+        .catch(err => {
+            document.getElementById('status').innerText = "發生錯誤: " + err.message;
+        });
+</script>
