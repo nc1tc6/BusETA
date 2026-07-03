@@ -1,56 +1,32 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
-<head>
-    <meta charset="UTF-8">
-    <title>九巴全站點網格查詢</title>
-    <style>
-        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
-        .card { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .grid-header { font-weight: bold; background: #ddd; padding: 5px; margin-top: 15px; }
-    </style>
-</head>
-<body onload="init()">
-    <div id="status">正在下載全港站點庫 (僅需一次)...</div>
-    <div id="output"></div>
+<body>
+    <div id="debug-log" style="font-family: monospace; white-space: pre-wrap; background: #000; color: #0f0; padding: 20px;"></div>
 
     <script>
-        // 1. 取得網格 KEY (將經緯度精確到小數點後兩位)
-        function getGridKey(lat, long) {
-            return `${Math.floor(lat * 100) / 100},${Math.floor(long * 100) / 100}`;
-        }
+        const targetStopId = "97EDE39CDE116A94"; // 你想 Debug 的 ID
 
-        async function init() {
-            const status = document.getElementById('status');
-            
+        async function debug() {
+            const log = document.getElementById('debug-log');
+            log.innerText = "正在 Debug...\n";
+
             try {
-                // 為了獲取包括隱藏月台在內的所有站點，我們必須使用一個綜合的數據源
-                // 如果 API 沒列出，這是九巴架構限制，此處我們使用官方公開 API
-                const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
-                const { data } = await res.json();
+                // 測試：嘗試直接讀取這個 ID
+                log.innerText += `正在請求: https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${targetStopId}\n`;
+                const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${targetStopId}`);
                 
-                status.innerHTML = "定位中...";
-                navigator.geolocation.getCurrentPosition(pos => {
-                    const { latitude: lat, longitude: lon } = pos.coords;
-                    const myGrid = getGridKey(lat, lon);
-                    
-                    status.innerHTML = `<h4>目前網格: ${myGrid}</h4>`;
-                    
-                    // 2. 本地端篩選 (完全不會觸發讀取失敗)
-                    const localStops = data.filter(s => getGridKey(s.lat, s.long) === myGrid);
-                    
-                    const output = document.getElementById('output');
-                    localStops.forEach(s => {
-                        const div = document.createElement('div');
-                        div.className = 'card';
-                        div.innerHTML = `<strong>${s.name_tc}</strong><br><small>ID: ${s.stop}</small>`;
-                        div.onclick = () => window.open(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${s.stop}`, '_blank');
-                        output.appendChild(div);
-                    });
-                });
-            } catch (e) {
-                status.innerHTML = "載入失敗，請檢查網路。";
+                if (!res.ok) {
+                    throw new Error(`HTTP 錯誤狀態: ${res.status}`);
+                }
+                
+                const result = await res.json();
+                log.innerText += "成功獲得回應:\n" + JSON.stringify(result, null, 2);
+            } catch (err) {
+                log.innerText += "⚠️ 錯誤: " + err.message + "\n";
+                log.innerText += "原因分析: 可能是該 ID 已過期，或該伺服器端點不接受直接請求。";
             }
         }
+        debug();
     </script>
 </body>
 </html>
