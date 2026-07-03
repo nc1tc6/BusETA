@@ -2,7 +2,7 @@ name: Update Bus Data
 
 on:
   schedule:
-    - cron: '*/15 * * * *'  # 每 15 分鐘執行一次
+    - cron: '*/1 * * * *'  # 每 1 分鐘執行一次
   workflow_dispatch:        # 讓你可以在網頁上手動點擊執行
 
 jobs:
