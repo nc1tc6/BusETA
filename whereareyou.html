@@ -1,48 +1,91 @@
 <!DOCTYPE html>
-<html lang="zh-HK">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>九巴強制搜尋器 (解決 422 錯誤)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Near by bus stop - KMB</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .card { border: 1px solid #ccc; padding: 10px; margin: 5px 0; border-radius: 4px; }
+        :root { --primary: #6366f1; --accent: #ec4899; --bg: #f1f5f9; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); margin: 0; color: #1e293b; }
+        .header { position: sticky; top: 0; z-index: 1000; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); padding: 16px; border-bottom: 2px solid #e2e8f0; }
+        .controls { display: flex; gap: 8px; max-width: 600px; margin: 0 auto; }
+        input { flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; }
+        button { padding: 12px 20px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; }
+        #status-bar { max-width: 600px; margin: 10px auto; padding: 0 16px; font-size: 0.9rem; color: #64748b; }
+        .container { max-width: 600px; margin: 10px auto; padding: 0 16px; }
+        .stop-card { background: white; padding: 20px; margin-bottom: 16px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border-left: 6px solid var(--primary); }
+        .eta-grid { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f8fafc; }
+        .dest { font-weight: 600; color: #334155; }
+        .mins { background: var(--accent); color: white; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 0.85rem; }
     </style>
 </head>
 <body>
-    <input type="text" id="route" value="35A" placeholder="路線編號">
-    <button onclick="startSearch()">搜尋</button>
-    <div id="output"></div>
+    <div class="header">
+        <div class="controls">
+            <input type="text" id="routeInput" placeholder="Route (e.g. 35A)">
+            <button onclick="runSearch()">Find</button>
+        </div>
+    </div>
+    <div id="status-bar"></div>
+    <div class="container" id="results"></div>
 
     <script>
-        async function startSearch() {
-            const route = document.getElementById('route').value.trim().toUpperCase();
-            const output = document.getElementById('output');
-            output.innerHTML = "查詢中...";
+        function setStatus(msg) { document.getElementById("status-bar").textContent = msg; }
+
+        async function runSearch() {
+            const route = document.getElementById("routeInput").value.toUpperCase();
+            const results = document.getElementById("results");
+            if(!route) return;
+
+            results.innerHTML = "";
+            setStatus("Locating and fetching route data...");
 
             try {
-                // 1. 取得所有路線清單以獲取正確的 service_type 和 bound
-                const listRes = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/route/');
-                const listJson = await listRes.json();
-                
-                // 2. 找到該路線所有可能的服務類型與方向組合
-                const variants = listJson.data.filter(r => r.route === route);
-                if (variants.length === 0) throw new Error("找不到此路線");
+                // 1. 取得該路線的正確參數 (解決 422 錯誤)
+                const routeList = await (await fetch('https://data.etabus.gov.hk/v1/transport/kmb/route/')).json();
+                const routeInfo = routeList.data.find(r => r.route === route);
+                if (!routeInfo) throw new Error("Route not found.");
 
-                // 3. 嘗試第一個合法組合 (如果失敗，API 就不會回傳 Invalid direction)
-                const v = variants[0];
-                const url = `https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route}/${v.service_type}/${v.bound}`;
-                
-                const stopRes = await fetch(url);
-                const stopJson = await stopRes.json();
+                // 2. 獲取路線所有站點
+                const stopList = await (await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route}/${routeInfo.service_type}/${routeInfo.bound}`)).json();
+                const allStops = await (await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop')).json();
 
-                if (!stopJson.data) throw new Error("無站點資料");
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const { latitude: lat, longitude: lon } = pos.coords;
+                    
+                    // 3. 找出路線中最近的 5 個站點
+                    const stopIds = stopList.data.map(s => s.stop);
+                    const nearby = allStops.data
+                        .filter(s => stopIds.includes(s.stop))
+                        .map(s => ({ ...s, dist: getDistance(lat, lon, s.lat, s.long) }))
+                        .sort((a, b) => a.dist - b.dist)
+                        .slice(0, 5);
 
-                output.innerHTML = `成功！使用參數 (Service:${v.service_type}, Bound:${v.bound})<br>`;
-                output.innerHTML += stopJson.data.map(s => `<div class="card">${s.stop}</div>`).join('');
-                
-            } catch (e) {
-                output.innerHTML = "錯誤: " + e.message;
-            }
+                    setStatus(nearby.length ? "" : "No stops found.");
+
+                    for (let stop of nearby) {
+                        const etaData = await (await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`)).json();
+                        const buses = (etaData.data || []).filter(b => b.route === route);
+                        
+                        if (buses.length > 0) {
+                            let html = `<div class="stop-card"><h3>${stop.name_tc} (${stop.dist.toFixed(2)} km)</h3>`;
+                            buses.slice(0, 3).forEach(b => {
+                                const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
+                                html += `<div class="eta-grid"><span class="dest">${b.dest_tc}</span><span class="mins">${mins} min</span></div>`;
+                            });
+                            results.innerHTML += html + `</div>`;
+                        }
+                    }
+                }, () => setStatus("Location access denied."));
+            } catch(e) { setStatus("Error: " + e.message); }
+        }
+
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
     </script>
 </body>
