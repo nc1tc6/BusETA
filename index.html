@@ -11,7 +11,7 @@
         input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
         button { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 6px; font-weight: bold; }
         .container { max-width: 500px; margin: auto; padding: 10px; }
-        .group-title { font-size: 0.85rem; font-weight: bold; color: #666; margin: 15px 0 5px; text-transform: uppercase; }
+        .group-title { font-size: 0.85rem; font-weight: bold; color: #666; margin: 15px 0 5px; }
         .card { background: white; padding: 10px; margin-bottom: 6px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
         .stop-info { font-size: 0.9rem; font-weight: 500; }
         .eta-time { font-size: 0.9rem; font-weight: bold; color: var(--primary); background: #fff0f0; padding: 2px 8px; border-radius: 4px; margin-left: 5px; }
@@ -42,48 +42,53 @@
 
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude: lat, longitude: lon } = pos.coords;
-                status.innerText = "查詢附近站點...";
+                status.innerText = "搜尋附近站點...";
 
                 try {
                     const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
                     const stopData = await res.json();
                     
-                    // 擴大搜索範圍至 1.5km，確保一定撈到站
-                    let nearbyStops = stopData.data.filter(s => {
-                        const d = Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111;
-                        return d < 1.5;
-                    });
+                    // 先計算距離並儲存
+                    let nearbyStops = stopData.data.map(s => ({
+                        ...s,
+                        dist: Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2)
+                    })).filter(s => s.dist < 0.02).sort((a, b) => a.dist - b.dist);
 
-                    status.innerText = "查詢班次...";
-                    let html = "";
-                    let foundAny = false;
+                    status.innerText = "獲取班次...";
                     const directionMap = {};
 
-                    // 處理所有符合路線的站點
                     for (let stop of nearbyStops) {
                         const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
                         const data = await res.json();
                         if (!data.data) continue;
                         
                         const buses = data.data.filter(b => b.route === route);
-                        if (buses.length === 0) continue;
-
                         buses.forEach(b => {
-                            foundAny = true;
                             if (!directionMap[b.dest_tc]) directionMap[b.dest_tc] = [];
-                            let stopEntry = directionMap[b.dest_tc].find(e => e.name === stop.name_tc);
-                            if (!stopEntry) {
-                                stopEntry = { name: stop.name_tc, etas: [] };
-                                directionMap[b.dest_tc].push(stopEntry);
+                            
+                            // 每個方向只加入該站點，如果未存在
+                            if (!directionMap[b.dest_tc].find(e => e.stop === stop.stop)) {
+                                directionMap[b.dest_tc].push({
+                                    stop: stop.stop,
+                                    name: stop.name_tc,
+                                    dist: stop.dist,
+                                    etas: []
+                                });
                             }
+                            
+                            // 加入 ETA
+                            let entry = directionMap[b.dest_tc].find(e => e.stop === stop.stop);
                             const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
-                            if (stopEntry.etas.length < 3) stopEntry.etas.push(mins);
+                            if (mins >= 0 && entry.etas.length < 2) entry.etas.push(mins);
                         });
                     }
 
+                    // 渲染：限制每個方向最多 3 個站
+                    let html = "";
                     for (const [dest, stops] of Object.entries(directionMap)) {
                         html += `<div class="group-title">往 ${dest}</div>`;
-                        stops.forEach(s => {
+                        // 這裡進行 .slice(0, 3) 確保每個方向最多顯示 3 個站
+                        stops.sort((a, b) => a.dist - b.dist).slice(0, 3).forEach(s => {
                             html += `<div class="card">
                                 <div class="stop-info">${s.name}</div>
                                 <div>${s.etas.map(m => `<span class="eta-time">${m}分</span>`).join('')}</div>
@@ -91,10 +96,10 @@
                         });
                     }
 
-                    output.innerHTML = foundAny ? html : "附近沒有該路線的班次";
+                    output.innerHTML = html || "找不到班次";
                     status.innerText = "";
-                } catch(e) { status.innerText = "查詢失敗，請稍後再試"; }
-            }, () => { status.innerText = "請允許定位權限"; });
+                } catch(e) { status.innerText = "查詢失敗"; }
+            });
         }
     </script>
 </body>
