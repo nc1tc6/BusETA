@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>九巴路線搜尋器 (50KM 範圍)</title>
+    <title>九巴路線搜尋器 (強韌版)</title>
     <style>
         :root { --primary: #e31d2b; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f4f9; padding: 15px; }
@@ -43,28 +43,27 @@
             status.innerText = "正在取得路線資訊...";
 
             try {
-                // 1. 取得該路線在方向 1 的站點列表
-                const routeStopsData = await fetchWithRetry(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route}/1/1`);
+                // 自動嘗試方向 1 或 2，避免找不到路線錯誤
+                let routeStopsData = null;
+                try {
+                    routeStopsData = await fetchWithRetry(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route}/1/1`);
+                } catch(e) {
+                    routeStopsData = await fetchWithRetry(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route}/1/2`);
+                }
+                
                 const stopList = routeStopsData.data.map(s => s.stop);
-
-                // 2. 獲取所有站點地理位置
                 const allStopsData = await fetchWithRetry('https://data.etabus.gov.hk/v1/transport/kmb/stop');
                 
                 navigator.geolocation.getCurrentPosition(async (pos) => {
                     const { latitude: lat, longitude: lon } = pos.coords;
                     
-                    // 3. 篩選出路線經過的站點，並計算與使用者的距離
                     let filteredStops = allStopsData.data
                         .filter(s => stopList.includes(s.stop))
-                        .map(s => ({
-                            ...s,
-                            dist: Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111
-                        }))
+                        .map(s => ({ ...s, dist: Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111 }))
                         .sort((a, b) => a.dist - b.dist);
 
                     const directionMap = {}; 
 
-                    // 4. 針對最近的 6 個經過該路線的站點查詢 ETA
                     for (let stop of filteredStops.slice(0, 6)) {
                         const data = await fetchWithRetry(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
                         const buses = (data.data || []).filter(b => b.route === route);
@@ -84,7 +83,6 @@
                         });
                     }
 
-                    // 5. 渲染結果
                     let renderedAny = false;
                     for (const [dest, stops] of Object.entries(directionMap)) {
                         let hasContent = false;
@@ -103,10 +101,10 @@
                         if (hasContent) output.innerHTML += groupHtml;
                     }
 
-                    if (!renderedAny) status.innerHTML = `<div class="warning-box">路線 ${route} 在附近（50KM內）暫無即時班次資訊。</div>`;
+                    if (!renderedAny) status.innerHTML = `<div class="warning-box">路線 ${route} 在附近暫無即時班次資訊。</div>`;
                     else status.innerText = "";
                 }, () => status.innerText = "無法獲取定位，請開啟權限");
-            } catch(e) { status.innerText = "找不到該路線資訊，請檢查路線編號"; }
+            } catch(e) { status.innerText = "找不到該路線資訊，請確認編號是否正確"; }
         }
     </script>
 </body>
