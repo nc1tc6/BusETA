@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>九巴到站搜尋器</title>
+    <title>九巴到站搜尋器 (最終完整版)</title>
     <style>
         :root { --primary: #e31d2b; }
-        body { font-family: -apple-system, sans-serif; background: #f4f4f9; padding: 15px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f4f4f9; padding: 15px; }
         .container { max-width: 500px; margin: auto; }
         .group-title { font-size: 1.2rem; color: #333; margin: 20px 0 10px; font-weight: bold; border-left: 5px solid var(--primary); padding-left: 10px; }
         .card { background: white; padding: 12px; margin: 8px 0; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
         .stop-name { font-size: 0.85rem; color: #666; font-weight: bold; margin-bottom: 5px; }
         .bus-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 0.9rem; }
         .eta-time { font-weight: bold; color: var(--primary); }
-        .warning-box { background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba; margin-top: 10px; }
+        .warning-box { background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba; margin-top: 10px; font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -21,7 +21,7 @@
         <h3>九巴搜尋 (按方向分組)</h3>
         <div style="display:flex; gap:5px;">
             <input type="text" id="route" placeholder="路線 (如 6)" style="flex:1; padding:10px;">
-            <button onclick="startSearch()" style="padding:10px; background:var(--primary); color:white; border:none; border-radius:4px;">搜尋</button>
+            <button onclick="startSearch()" style="padding:10px; background:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer;">搜尋</button>
         </div>
         <div id="status" style="margin:10px 0; color:#666;"></div>
         <div id="output"></div>
@@ -49,15 +49,14 @@
                 try {
                     const stopData = await fetchWithRetry('https://data.etabus.gov.hk/v1/transport/kmb/stop');
                     
-                    // 計算所有站點距離
+                    // 1. 計算距離並排序
                     let allStops = stopData.data.map(s => ({
                         ...s,
                         dist: Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111
                     })).sort((a, b) => a.dist - b.dist);
 
-                    // 1km 內的站點
+                    // 2. 取 1km 內站點
                     let allNearby = allStops.filter(s => s.dist < 1.0);
-                    
                     const directionMap = {}; 
 
                     for (let stop of allNearby) {
@@ -66,13 +65,16 @@
                         
                         buses.forEach(b => {
                             if (!directionMap[b.dest_tc]) directionMap[b.dest_tc] = [];
+                            
                             let stopEntry = directionMap[b.dest_tc].find(e => e.stop === stop.stop);
                             
+                            // 方向分組：限制該方向最多 2 個站點
                             if (!stopEntry && new Set(directionMap[b.dest_tc].map(i => i.stop)).size < 2) {
                                 stopEntry = { stop: stop.stop, name: stop.name_tc, dist: stop.dist, etas: [] };
                                 directionMap[b.dest_tc].push(stopEntry);
                             }
                             
+                            // ETA 限制：限制每個站點最多 3 班車
                             if (stopEntry && stopEntry.etas.length < 3) {
                                 const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
                                 if (mins > 0) stopEntry.etas.push(mins);
@@ -80,11 +82,12 @@
                         });
                     }
 
-                    // 渲染邏輯
+                    // 3. 渲染
                     let renderedAny = false;
                     for (const [dest, stops] of Object.entries(directionMap)) {
                         let hasContent = false;
                         let groupHtml = `<div class="group-title">往 ${dest}</div>`;
+                        
                         stops.forEach(s => {
                             if (s.etas.length > 0) {
                                 hasContent = true;
@@ -99,20 +102,20 @@
                         if (hasContent) output.innerHTML += groupHtml;
                     }
                     
-                    // 錯誤與提示邏輯
+                    // 4. 狀態提示
                     if (!renderedAny) {
                         const nearest = allStops[0];
-                        status.innerHTML = `<div class="warning-box">
-                            <strong>搜尋結果：</strong><br>
-                            附近 1km 內沒有該路線班次。<br>
-                            距離您最近的站點是：<strong>${nearest.name_tc}</strong> (約 ${nearest.dist.toFixed(2)}km)
-                        </div>`;
+                        const stopsIn1km = allNearby.length;
+                        let message = stopsIn1km === 0 
+                            ? `附近 1km 內沒有站點。<br>最近站點：<strong>${nearest.name_tc}</strong> (${nearest.dist.toFixed(2)}km)`
+                            : `附近 ${stopsIn1km} 個站點內，目前沒有路線 <strong>${route}</strong> 的即時班次。`;
+                        status.innerHTML = `<div class="warning-box"><strong>搜尋結果：</strong><br>${message}</div>`;
                     } else {
                         status.innerText = "";
                     }
 
-                } catch(e) { status.innerText = "讀取失敗"; }
-            });
+                } catch(e) { status.innerText = "讀取失敗，請檢查網路或重試"; }
+            }, () => status.innerText = "請開啟定位權限以進行搜尋");
         }
     </script>
 </body>
