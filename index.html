@@ -88,25 +88,15 @@
                     for (const [key, group] of Object.entries(directionMap)) {
                         html += `<div class="group-title">往 ${group.dest}</div>`;
                         
-                        // Sort by distance (nearest to furthest)
                         const sorted = group.stops.sort((a, b) => a.dist - b.dist);
-                        const closestIdx = 0; // The nearest is at index 0 after sorting
-                        
                         let resultStops = [];
                         
-                        // Logic: Identify + and - (assuming sorted distance: 0 is closest)
-                        // Actually, if we sort by distance, the "nearest" is index 0. 
-                        // To get + and - behavior, we need to respect the route sequence.
-                        // Since raw distance doesn't guarantee route sequence, we show 
-                        // nearest and its immediate sorted neighbors.
-                        
-                        if (sorted.length <= 3) {
-                            resultStops = sorted;
+                        if (sorted.length === 1) {
+                            resultStops = [sorted[0]];
+                        } else if (sorted.length === 2) {
+                            resultStops = [sorted[1], sorted[0]];
                         } else {
-                            // If we want to simulate +/- neighbors:
-                            // We take index 0 as nearest, index 1 as +, index 2 as ++
-                            // Or index 0 as nearest, index 1 as +, index -1 as -
-                            resultStops = [sorted[0], sorted[1], sorted[2]];
+                            resultStops = [sorted[1], sorted[0], sorted[2]];
                         }
 
                         resultStops.forEach(s => {
