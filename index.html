@@ -2,13 +2,14 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <title>九巴精準路線追蹤</title>
+    <title>九巴精準快查</title>
     <style>
         body { font-family: sans-serif; background: #f4f4f4; padding: 15px; }
         .card { background: white; padding: 12px; margin-bottom: 8px; border-radius: 8px; border-left: 5px solid #ccc; }
         .nearest { border-left-color: #e31d2b; background: #fff0f0; }
         .title { font-weight: bold; margin: 20px 0 10px; color: #333; font-size: 1.2rem; }
         .eta-time { color: #e31d2b; font-weight: bold; }
+        #status { color: #666; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -23,16 +24,20 @@
             const output = document.getElementById('output');
             const status = document.getElementById('status');
             
+            if (!routeInput) return;
             output.innerHTML = "";
-            status.innerText = "正在定位與分析...";
+            status.innerText = "定位中...";
 
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude: lat, longitude: lon } = pos.coords;
-                
+                status.innerText = "查詢路線資料中...";
+
                 try {
                     const routeRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route/${routeInput}`);
                     const routeData = await routeRes.json();
                     
+                    if (!routeData.data || routeData.data.length === 0) throw new Error("路線不存在");
+
                     for (let r of routeData.data) {
                         const stopsRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${r.route}/${r.service_type}/${r.bound}`);
                         if (!stopsRes.ok) continue;
@@ -55,9 +60,10 @@
                         for (let i of indices) {
                             if (sequence[i]) {
                                 const s = sequence[i];
-                                const eta = await (await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${s.stop}`)).json();
+                                const etaRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${s.stop}`);
+                                const eta = etaRes.ok ? await etaRes.json() : { data: [] };
                                 const bus = (eta.data || []).find(b => b.route === routeInput);
-                                const time = bus ? (Math.round((new Date(bus.eta) - new Date())/60000) <= 0 ? '到達' : Math.round((new Date(bus.eta)-new Date())/60000) + ' 分') : '-';
+                                const time = bus ? (Math.round((new Date(bus.eta) - new Date())/60000) <= 0 ? '到達' : Math.round((new Date(bus.eta) - new Date())/60000) + ' 分') : '-';
                                 
                                 output.innerHTML += `
                                     <div class="card ${i === nearestIdx ? 'nearest' : ''}">
@@ -69,10 +75,9 @@
                     }
                     status.innerText = "查詢完成";
                 } catch(e) {
-                    status.innerText = "發生錯誤，請檢查路線編號。";
-                    console.error(e);
+                    status.innerText = "錯誤: " + e.message;
                 }
-            }, () => { status.innerText = "請開啟定位權限"; });
+            }, () => { status.innerText = "請允許定位權限以繼續。"; });
         }
     </script>
 </body>
