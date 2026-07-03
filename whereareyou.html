@@ -1,32 +1,23 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
 <body>
-    <div id="debug-log" style="font-family: monospace; white-space: pre-wrap; background: #000; color: #0f0; padding: 20px;"></div>
+    <h3>九巴原始數據調試器</h3>
+    <button onclick="fetchRawData()">獲取原始站點清單</button>
+    <pre id="raw-output" style="background:#eee; padding:10px; height:300px; overflow:scroll;"></pre>
 
     <script>
-        const targetStopId = "97EDE39CDE116A94"; // 你想 Debug 的 ID
-
-        async function debug() {
-            const log = document.getElementById('debug-log');
-            log.innerText = "正在 Debug...\n";
-
+        async function fetchRawData() {
+            const out = document.getElementById('raw-output');
+            out.innerText = "正在讀取原始數據...";
             try {
-                // 測試：嘗試直接讀取這個 ID
-                log.innerText += `正在請求: https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${targetStopId}\n`;
-                const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${targetStopId}`);
-                
-                if (!res.ok) {
-                    throw new Error(`HTTP 錯誤狀態: ${res.status}`);
-                }
-                
-                const result = await res.json();
-                log.innerText += "成功獲得回應:\n" + JSON.stringify(result, null, 2);
-            } catch (err) {
-                log.innerText += "⚠️ 錯誤: " + err.message + "\n";
-                log.innerText += "原因分析: 可能是該 ID 已過期，或該伺服器端點不接受直接請求。";
+                // 讀取官方所有站點清單
+                const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
+                const data = await res.json();
+                out.innerText = JSON.stringify(data.data, null, 2);
+            } catch (e) {
+                out.innerText = "讀取失敗，請檢查網路連線或 CORS 限制。";
             }
         }
-        debug();
     </script>
 </body>
 </html>
