@@ -1,7 +1,7 @@
 {
     "type": "RouteETA",
     "version": "1.0",
-    "generated_timestamp": "2026-07-03T08:53:31+08:00",
+    "generated_timestamp": "2026-07-03T10:37:15+08:00",
     "data": [
         {
             "co": "KMB",
@@ -13,11 +13,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:55:00+08:00",
+            "eta": "2026-07-03T10:45:00+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -29,11 +29,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:10:00+08:00",
+            "eta": "2026-07-03T11:00:00+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -45,11 +45,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:25:00+08:00",
+            "eta": "2026-07-03T11:15:00+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -61,11 +61,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:56:21+08:00",
+            "eta": "2026-07-03T10:46:18+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -77,11 +77,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:11:14+08:00",
+            "eta": "2026-07-03T11:01:17+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -93,11 +93,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:26:14+08:00",
+            "eta": "2026-07-03T11:16:17+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -109,11 +109,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:58:16+08:00",
+            "eta": "2026-07-03T10:48:05+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -125,11 +125,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:12:59+08:00",
+            "eta": "2026-07-03T11:03:08+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -141,11 +141,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:27:59+08:00",
+            "eta": "2026-07-03T11:18:08+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -157,11 +157,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:00:45+08:00",
+            "eta": "2026-07-03T10:50:33+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -173,11 +173,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:15:30+08:00",
+            "eta": "2026-07-03T11:05:40+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -189,11 +189,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:30:30+08:00",
+            "eta": "2026-07-03T11:20:40+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -205,11 +205,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:01:29+08:00",
+            "eta": "2026-07-03T10:51:16+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -221,11 +221,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:16:13+08:00",
+            "eta": "2026-07-03T11:06:18+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -237,11 +237,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:31:13+08:00",
+            "eta": "2026-07-03T11:21:18+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -253,11 +253,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:03:23+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:36:49+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -269,11 +269,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:18:01+08:00",
+            "eta": "2026-07-03T10:53:12+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -285,11 +285,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:33:01+08:00",
+            "eta": "2026-07-03T11:08:16+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -301,11 +301,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:04:12+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:37:37+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -317,11 +317,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:18:52+08:00",
+            "eta": "2026-07-03T10:54:01+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -333,11 +333,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:33:52+08:00",
+            "eta": "2026-07-03T11:09:05+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -349,11 +349,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:06:06+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:39:25+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -365,11 +365,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:20:39+08:00",
+            "eta": "2026-07-03T10:55:49+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -381,11 +381,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:35:39+08:00",
+            "eta": "2026-07-03T11:10:58+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -397,11 +397,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:53:29+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:41:50+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -413,11 +413,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:08:30+08:00",
+            "eta": "2026-07-03T10:58:13+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -429,11 +429,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:23:04+08:00",
+            "eta": "2026-07-03T11:13:22+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -445,11 +445,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:54:55+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:43:32+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -461,11 +461,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:09:57+08:00",
+            "eta": "2026-07-03T10:59:55+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -477,11 +477,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:24:39+08:00",
+            "eta": "2026-07-03T11:15:10+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -493,11 +493,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:57:35+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:36:27+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -509,11 +509,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:12:37+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:46:42+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -525,11 +525,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:27:35+08:00",
+            "eta": "2026-07-03T11:03:04+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -541,11 +541,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:58:46+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:37:44+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -557,11 +557,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:13:47+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:47:59+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -573,11 +573,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:28:52+08:00",
+            "eta": "2026-07-03T11:04:22+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -589,11 +589,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:00:07+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:38:55+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -605,11 +605,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:15:08+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:49:10+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -621,11 +621,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:30:16+08:00",
+            "eta": "2026-07-03T11:05:33+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -637,11 +637,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:01:04+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:39:56+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -653,11 +653,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:16:06+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:50:11+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -669,11 +669,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:31:21+08:00",
+            "eta": "2026-07-03T11:06:33+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -685,11 +685,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:52:02+08:00",
+            "eta": "2026-07-03T10:41:02+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -701,11 +701,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:02:03+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:51:17+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -717,11 +717,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:17:05+08:00",
+            "eta": "2026-07-03T11:07:39+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -733,11 +733,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:53:04+08:00",
+            "eta": "2026-07-03T10:42:41+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -749,11 +749,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:03:26+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:52:56+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -765,11 +765,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:18:35+08:00",
+            "eta": "2026-07-03T11:09:19+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -781,11 +781,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:56:42+08:00",
+            "eta": "2026-07-03T10:46:40+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -797,11 +797,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:07:03+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:56:55+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -813,11 +813,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:22:12+08:00",
+            "eta": "2026-07-03T11:13:17+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -829,11 +829,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:57:58+08:00",
+            "eta": "2026-07-03T10:48:08+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -845,11 +845,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:08:19+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:58:23+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -861,11 +861,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:23:28+08:00",
+            "eta": "2026-07-03T11:14:46+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -877,11 +877,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:00:33+08:00",
+            "eta": "2026-07-03T10:50:54+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -893,11 +893,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:10:51+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T11:01:09+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -909,11 +909,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:26:00+08:00",
+            "eta": "2026-07-03T11:17:32+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -925,11 +925,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:02:48+08:00",
+            "eta": "2026-07-03T10:53:13+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -941,11 +941,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:13:06+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T11:03:28+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -957,11 +957,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:28:15+08:00",
+            "eta": "2026-07-03T11:19:50+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -973,11 +973,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:04:43+08:00",
+            "eta": "2026-07-03T10:55:10+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -989,11 +989,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:14:52+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T11:05:28+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1005,11 +1005,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:30:01+08:00",
+            "eta": "2026-07-03T11:21:48+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1021,11 +1021,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:53:14+08:00",
-            "rmk_tc": "",
-            "rmk_sc": "",
-            "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:37:42+08:00",
+            "rmk_tc": "原定班次",
+            "rmk_sc": "原定班次",
+            "rmk_en": "Scheduled Bus",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1037,11 +1037,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:08:03+08:00",
+            "eta": "2026-07-03T10:58:35+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1053,11 +1053,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:17:53+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T11:09:32+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1069,11 +1069,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:55:04+08:00",
-            "rmk_tc": "",
-            "rmk_sc": "",
-            "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:39:44+08:00",
+            "rmk_tc": "原定班次",
+            "rmk_sc": "原定班次",
+            "rmk_en": "Scheduled Bus",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1085,11 +1085,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:10:03+08:00",
+            "eta": "2026-07-03T11:00:48+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1101,11 +1101,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:19:44+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T11:11:45+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1117,11 +1117,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:57:23+08:00",
-            "rmk_tc": "",
-            "rmk_sc": "",
-            "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:42:11+08:00",
+            "rmk_tc": "原定班次",
+            "rmk_sc": "原定班次",
+            "rmk_en": "Scheduled Bus",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1133,11 +1133,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:12:29+08:00",
+            "eta": "2026-07-03T11:02:48+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1149,11 +1149,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:22:08+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T11:13:58+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1165,11 +1165,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:57:42+08:00",
-            "rmk_tc": "",
-            "rmk_sc": "",
-            "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T10:42:41+08:00",
+            "rmk_tc": "原定班次",
+            "rmk_sc": "原定班次",
+            "rmk_en": "Scheduled Bus",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1181,11 +1181,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:12:59+08:00",
+            "eta": "2026-07-03T11:03:23+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1197,11 +1197,11 @@
             "dest_sc": "尖沙咀码头",
             "dest_en": "STAR FERRY",
             "eta_seq": 3,
-            "eta": "2026-07-03T09:22:27+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T11:14:33+08:00",
+            "rmk_tc": "",
+            "rmk_sc": "",
+            "rmk_en": "",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1213,11 +1213,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:00:00+08:00",
+            "eta": "2026-07-03T11:00:00+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1229,27 +1229,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:25:00+08:00",
+            "eta": "2026-07-03T11:15:00+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 1,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 3,
-            "eta": "2026-07-03T09:50:00+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1261,11 +1245,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:01:23+08:00",
+            "eta": "2026-07-03T11:01:31+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1277,27 +1261,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:26:23+08:00",
+            "eta": "2026-07-03T11:16:31+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 2,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 3,
-            "eta": "2026-07-03T09:51:23+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1309,11 +1277,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:02:52+08:00",
+            "eta": "2026-07-03T11:03:11+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1325,11 +1293,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:27:52+08:00",
+            "eta": "2026-07-03T11:18:11+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1341,11 +1309,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:05:02+08:00",
+            "eta": "2026-07-03T11:05:36+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1357,11 +1325,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:30:02+08:00",
+            "eta": "2026-07-03T11:20:36+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1373,11 +1341,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:07:37+08:00",
+            "eta": "2026-07-03T11:08:27+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1389,11 +1357,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:32:37+08:00",
+            "eta": "2026-07-03T11:23:27+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1405,11 +1373,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:08:46+08:00",
+            "eta": "2026-07-03T11:09:48+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1421,11 +1389,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:33:46+08:00",
+            "eta": "2026-07-03T11:24:48+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1437,11 +1405,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:11:31+08:00",
+            "eta": "2026-07-03T11:12:34+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1453,11 +1421,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:36:31+08:00",
+            "eta": "2026-07-03T11:27:34+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1469,11 +1437,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:12:46+08:00",
+            "eta": "2026-07-03T11:13:58+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1485,11 +1453,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:37:46+08:00",
+            "eta": "2026-07-03T11:28:58+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1501,11 +1469,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:54:17+08:00",
-            "rmk_tc": "",
-            "rmk_sc": "",
-            "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "eta": "2026-07-03T11:19:29+08:00",
+            "rmk_tc": "原定班次",
+            "rmk_sc": "原定班次",
+            "rmk_en": "Scheduled Bus",
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1517,27 +1485,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:18:15+08:00",
+            "eta": "2026-07-03T11:34:29+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 9,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 3,
-            "eta": "2026-07-03T09:43:15+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1549,43 +1501,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:55:06+08:00",
-            "rmk_tc": "",
-            "rmk_sc": "",
-            "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 10,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 2,
-            "eta": "2026-07-03T09:19:15+08:00",
+            "eta": "2026-07-03T11:20:54+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 10,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 3,
-            "eta": "2026-07-03T09:44:15+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1597,11 +1517,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:56:33+08:00",
+            "eta": "2026-07-03T10:37:17+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1613,27 +1533,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:20:49+08:00",
+            "eta": "2026-07-03T11:23:19+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 11,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 3,
-            "eta": "2026-07-03T09:45:49+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1645,11 +1549,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:59:30+08:00",
+            "eta": "2026-07-03T10:40:05+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1661,27 +1565,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:23:50+08:00",
+            "eta": "2026-07-03T11:26:20+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 12,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 3,
-            "eta": "2026-07-03T09:48:50+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1693,11 +1581,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:00:43+08:00",
+            "eta": "2026-07-03T10:41:09+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1709,27 +1597,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:25:03+08:00",
+            "eta": "2026-07-03T11:27:28+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 13,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 3,
-            "eta": "2026-07-03T09:50:03+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1741,11 +1613,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:02:09+08:00",
+            "eta": "2026-07-03T10:42:28+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1757,27 +1629,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:26:28+08:00",
+            "eta": "2026-07-03T11:28:50+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 14,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 3,
-            "eta": "2026-07-03T09:51:28+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1789,11 +1645,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:04:22+08:00",
+            "eta": "2026-07-03T10:44:25+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1805,11 +1661,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:28:40+08:00",
+            "eta": "2026-07-03T11:30:50+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1821,11 +1677,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:05:32+08:00",
+            "eta": "2026-07-03T10:45:35+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1837,11 +1693,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:29:49+08:00",
+            "eta": "2026-07-03T11:32:05+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1853,11 +1709,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:06:54+08:00",
+            "eta": "2026-07-03T10:46:52+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1869,11 +1725,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 2,
-            "eta": "2026-07-03T09:31:12+08:00",
+            "eta": "2026-07-03T11:33:20+08:00",
             "rmk_tc": "原定班次",
             "rmk_sc": "原定班次",
             "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1885,27 +1741,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:10:37+08:00",
+            "eta": "2026-07-03T10:50:22+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 18,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 2,
-            "eta": "2026-07-03T09:34:52+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1917,27 +1757,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:10:50+08:00",
+            "eta": "2026-07-03T10:50:39+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 19,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 2,
-            "eta": "2026-07-03T09:35:06+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1949,27 +1773,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:12:23+08:00",
+            "eta": "2026-07-03T10:52:10+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 20,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 2,
-            "eta": "2026-07-03T09:36:37+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -1981,27 +1789,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:13:31+08:00",
+            "eta": "2026-07-03T10:53:11+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 21,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 2,
-            "eta": "2026-07-03T09:37:43+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -2013,27 +1805,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T09:14:34+08:00",
+            "eta": "2026-07-03T10:54:12+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 22,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 2,
-            "eta": "2026-07-03T09:38:45+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -2045,43 +1821,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:52:59+08:00",
+            "eta": "2026-07-03T10:55:59+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 23,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 2,
-            "eta": "2026-07-03T09:16:28+08:00",
-            "rmk_tc": "",
-            "rmk_sc": "",
-            "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 23,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 3,
-            "eta": "2026-07-03T09:40:39+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -2093,43 +1837,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:54:50+08:00",
+            "eta": "2026-07-03T10:57:58+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 24,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 2,
-            "eta": "2026-07-03T09:18:19+08:00",
-            "rmk_tc": "",
-            "rmk_sc": "",
-            "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 24,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 3,
-            "eta": "2026-07-03T09:42:30+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         },
         {
             "co": "KMB",
@@ -2141,43 +1853,11 @@
             "dest_sc": "竹园邨",
             "dest_en": "CHUK YUEN ESTATE",
             "eta_seq": 1,
-            "eta": "2026-07-03T08:56:01+08:00",
+            "eta": "2026-07-03T10:59:22+08:00",
             "rmk_tc": "",
             "rmk_sc": "",
             "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 25,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 2,
-            "eta": "2026-07-03T09:19:40+08:00",
-            "rmk_tc": "",
-            "rmk_sc": "",
-            "rmk_en": "",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
-        },
-        {
-            "co": "KMB",
-            "route": "1",
-            "dir": "I",
-            "service_type": 1,
-            "seq": 25,
-            "dest_tc": "竹園邨",
-            "dest_sc": "竹园邨",
-            "dest_en": "CHUK YUEN ESTATE",
-            "eta_seq": 3,
-            "eta": "2026-07-03T09:43:52+08:00",
-            "rmk_tc": "原定班次",
-            "rmk_sc": "原定班次",
-            "rmk_en": "Scheduled Bus",
-            "data_timestamp": "2026-07-03T08:53:21+08:00"
+            "data_timestamp": "2026-07-03T10:36:45+08:00"
         }
     ]
 }
