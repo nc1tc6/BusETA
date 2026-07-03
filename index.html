@@ -14,21 +14,30 @@
         .container { max-width: 500px; margin: auto; padding: 10px; }
         .group-title { font-size: 0.9rem; font-weight: bold; color: #666; margin: 20px 0 8px; }
         
-        /* 調整卡片樣式以支援兩行顯示 */
         .card { background: white; padding: 12px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .stop-name { font-size: 0.95rem; font-weight: bold; color: #333; }
         .stop-dist { font-size: 0.8rem; color: #888; }
-        .row-bottom { display: flex; gap: 8px; }
-        .eta-time { font-size: 0.9rem; color: var(--primary); background: #fff0f0; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
         
+        /* 確保 ETA 固定寬度對齊 */
+        .row-bottom { display: flex; gap: 8px; }
+        .eta-time { 
+            font-size: 0.9rem; 
+            color: var(--primary); 
+            background: #fff0f0; 
+            padding: 4px 0; 
+            border-radius: 4px; 
+            font-weight: bold; 
+            width: 65px; 
+            text-align: center; 
+        }
         #status { text-align: center; margin: 20px; color: #666; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <input type="text" id="route" placeholder="路線號碼 (如 6)" maxlength="5">
+        <input type="text" id="route" placeholder="路線號碼..." maxlength="5">
         <button onclick="startSearch()">搜尋</button>
     </div>
 
@@ -59,7 +68,7 @@
 
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude: lat, longitude: lon } = pos.coords;
-                status.innerText = "搜尋中...";
+                status.innerText = "查詢中...";
 
                 try {
                     const stopData = await fetchWithRetry('https://data.etabus.gov.hk/v1/transport/kmb/stop');
@@ -96,15 +105,15 @@
                                     <span class="stop-dist">${s.dist.toFixed(2)} km</span>
                                 </div>
                                 <div class="row-bottom">
-                                    ${s.etas.map(m => `<span class="eta-time">${m} 分鐘</span>`).join('')}
+                                    ${s.etas.map(m => `<span class="eta-time">${m} 分</span>`).join('')}
                                 </div>
                             </div>`;
                         });
                     }
-                    output.innerHTML = html || "找不到相關班次";
+                    output.innerHTML = html || "找不到班次";
                     status.innerText = "";
                 } catch(e) { status.innerText = "查詢失敗"; }
-            }, () => { status.innerText = "無法定位"; });
+            }, () => { status.innerText = "請開啟位置權限"; });
         }
     </script>
 </body>
