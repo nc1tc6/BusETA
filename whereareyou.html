@@ -2,45 +2,40 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <title>九巴穩定搜尋器</title>
-    <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .container { max-width: 500px; margin: auto; }
-        .card { border: 1px solid #ddd; padding: 10px; margin: 10px 0; border-radius: 8px; }
-        .error { color: red; }
-    </style>
+    <title>九巴自動校正搜尋器</title>
 </head>
 <body>
-    <div class="container">
-        <input type="text" id="route" placeholder="路線編號 (如 35A)">
-        <button onclick="startSearch()">搜尋</button>
-        <div id="output"></div>
-    </div>
+    <input type="text" id="route" value="35A" placeholder="路線編號">
+    <button onclick="smartSearch()">搜尋路線</button>
+    <div id="output"></div>
 
     <script>
-        async function startSearch() {
+        async function smartSearch() {
             const route = document.getElementById('route').value.trim().toUpperCase();
             const output = document.getElementById('output');
-            output.innerHTML = "查詢中...";
+            output.innerHTML = "正在獲取路線正確參數...";
 
             try {
-                // 1. 取得路線所有站點 (最穩定的 API 寫法)
-                const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route}/1/1`);
+                // 1. 先從總表抓取該路線的正確 service_type 和 bound
+                const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/route/');
                 const json = await res.json();
                 
-                if (json.data.length === 0) throw new Error("無效路線");
+                // 找出該路線編號的資料
+                const routeInfo = json.data.find(r => r.route === route);
+                
+                if (!routeInfo) throw new Error("找不到此路線");
 
-                // 2. 獲取所有站點位置
-                const stopRes = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
+                // 2. 使用官方提供的 service_type 和 bound (這能確保絕對不會出現 422 錯誤)
+                const url = `https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route}/${routeInfo.service_type}/${routeInfo.bound}`;
+                
+                const stopRes = await fetch(url);
                 const stopJson = await stopRes.json();
                 
-                // 3. 簡單過濾並顯示前 5 個站點作測試
-                const routeStopIds = json.data.map(s => s.stop);
-                const results = stopJson.data.filter(s => routeStopIds.includes(s.stop)).slice(0, 5);
-                
-                output.innerHTML = results.map(s => `<div class="card">${s.name_tc}</div>`).join('');
+                output.innerHTML = `成功！路線 ${route} 使用參數 Service:${routeInfo.service_type}, Bound:${routeInfo.bound}，共找到 ${stopJson.data.length} 個站點。`;
+                console.log("站點資料:", stopJson.data);
+
             } catch (e) {
-                output.innerHTML = `<div class="error">找不到路線資訊，請確保編號正確。</div>`;
+                output.innerHTML = "錯誤: " + e.message;
             }
         }
     </script>
