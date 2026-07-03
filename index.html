@@ -24,7 +24,7 @@
 <body>
 
     <div class="header">
-        <input type="text" id="route" placeholder="路線號碼..." maxlength="5">
+        <input type="text" id="route" placeholder="輸入路線..." maxlength="5">
         <button onclick="startSearch()">搜尋</button>
     </div>
 
@@ -62,42 +62,51 @@
                     let nearbyStops = stopData.data.map(s => ({
                         ...s,
                         dist: Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111
-                    })).filter(s => s.dist < 2.0); 
+                    })).filter(s => s.dist < 1.0).sort((a, b) => a.dist - b.dist); // 縮回 1km 以免清單過長
 
                     const directionMap = {};
                     for (let stop of nearbyStops) {
                         const data = await fetchWithRetry(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
-                        // 即使 data.data 為空，也要記錄該站點，以便顯示 "-"
-                        if (!data) continue;
+                        const buses = (data?.data || []).filter(b => b.route === route);
                         
-                        const buses = (data.data || []).filter(b => b.route === route);
-                        const key = `${route}_${stop.stop}`; // 改用站點鍵值確保可以記錄到該站點
-                        
-                        if (!directionMap[key]) {
-                            directionMap[key] = { 
-                                name: stop.name_tc, 
-                                dist: stop.dist, 
-                                etas: buses.map(b => Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000)))
-                            };
+                        // 即使沒班次也不忽略，記錄下來以檢查是否為該路線站點
+                        if (buses.length > 0) {
+                            const dest = buses[0].dest_tc;
+                            if (!directionMap[dest]) directionMap[dest] = [];
+                            directionMap[dest].push({
+                                name: stop.name_tc,
+                                dist: stop.dist,
+                                etas: buses.map(b => Math.round((new Date(b.eta) - new Date()) / 60000))
+                            });
                         }
                     }
 
-                    // 這裡簡化邏輯直接渲染
                     let html = "";
-                    Object.values(directionMap).sort((a, b) => a.dist - b.dist).forEach(s => {
-                        html += `<div class="card">
-                            <div class="row-top">
-                                <span class="stop-name">${s.name}</span>
-                                <span class="stop-dist">${s.dist.toFixed(2)} km</span>
-                            </div>
-                            <div class="row-bottom">
-                                ${s.etas.length > 0 
-                                    ? s.etas.map(m => `<span class="eta-time">${m === 0 ? '到達' : m + ' 分'}</span>`).join('') 
-                                    : '<span class="eta-time" style="background:#eee; color:#999">-</span>'}
-                            </div>
-                        </div>`;
-                    });
-                    
+                    for (const [dest, stops] of Object.entries(directionMap)) {
+                        html += `<div class="group-title">往 ${dest}</div>`;
+                        
+                        // 先排序
+                        const sorted = stops.sort((a, b) => a.dist - b.dist);
+                        // 應用 2-1-3 邏輯
+                        let arranged = [];
+                        if (sorted.length >= 3) {
+                            arranged = [sorted[1], sorted[0], sorted[2]];
+                        } else {
+                            arranged = sorted; // 不夠 3 個就按距離排
+                        }
+
+                        arranged.forEach(s => {
+                            html += `<div class="card">
+                                <div class="row-top">
+                                    <span class="stop-name">${s.name}</span>
+                                    <span class="stop-dist">${s.dist.toFixed(2)} km</span>
+                                </div>
+                                <div class="row-bottom">
+                                    ${s.etas.length > 0 ? s.etas.slice(0,3).map(m => `<span class="eta-time">${m <= 0 ? '到達' : m + ' 分'}</span>`).join('') : '<span class="eta-time" style="background:#eee; color:#999">-</span>'}
+                                </div>
+                            </div>`;
+                        });
+                    }
                     output.innerHTML = html || "找不到相關班次";
                     status.innerText = "";
                 } catch(e) { status.innerText = "查詢失敗"; }
