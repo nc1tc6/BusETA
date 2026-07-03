@@ -2,39 +2,113 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <title>九巴精準快查</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>九巴到站搜尋器</title>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f4f4f4; padding: 15px; }
-        .card { background: white; padding: 12px; margin-bottom: 8px; border-radius: 8px; border-left: 5px solid #ccc; }
-        .nearest { border-left-color: #e31d2b; background: #fff0f0; }
-        .title { font-weight: bold; margin: 20px 0 10px; color: #333; font-size: 1.2rem; }
-        .eta-time { color: #e31d2b; font-weight: bold; }
-        #status { color: #666; margin-bottom: 10px; }
+        :root { --primary: #e31d2b; --bg: #f8f9fa; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); padding: 20px; color: #333; }
+        .container { max-width: 500px; margin: auto; }
+        h3 { margin-top: 0; }
+        
+        /* 搜尋區塊 */
+        .search-box { display: flex; gap: 10px; background: white; padding: 10px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        button { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        button:active { transform: scale(0.98); }
+
+        /* 結果樣式 */
+        .group-title { font-size: 1.1rem; margin: 25px 0 10px; color: #555; border-bottom: 2px solid var(--primary); display: inline-block; }
+        .card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .stop-name { font-size: 0.9rem; font-weight: bold; color: #222; margin-bottom: 8px; }
+        .bus-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; }
+        .eta-time { font-size: 1.2rem; font-weight: 800; color: var(--primary); }
+        
+        #status { text-align: center; margin: 20px; color: #888; }
+        .spinner { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <input type="text" id="route" placeholder="例如: 6">
-    <button onclick="smartSearch()">查詢</button>
-    <div id="status"></div>
-    <div id="output"></div>
+    <div class="container">
+        <h3>九巴到站搜尋</h3>
+        <div class="search-box">
+            <input type="text" id="route" placeholder="輸入路線 (如 6)" maxlength="5">
+            <button onclick="startSearch()">搜尋</button>
+        </div>
+        <div id="status"></div>
+        <div id="output"></div>
+    </div>
 
     <script>
-        async function smartSearch() {
-            const routeInput = document.getElementById('route').value.trim().toUpperCase();
-            const output = document.getElementById('output');
+        async function fetchWithRetry(url, retries = 2) {
+            try { const res = await fetch(url); return await res.json(); }
+            catch (e) { if(retries > 0) return fetchWithRetry(url, retries - 1); throw e; }
+        }
+
+        async function startSearch() {
+            const route = document.getElementById('route').value.trim().toUpperCase();
             const status = document.getElementById('status');
+            const output = document.getElementById('output');
             
-            if (!routeInput) return;
+            if(!route) return;
+            
             output.innerHTML = "";
-            status.innerText = "正在定位與分析...";
+            status.innerHTML = '<div class="spinner"></div>定位中...';
 
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude: lat, longitude: lon } = pos.coords;
-                status.innerText = "查詢路線資料中...";
+                status.innerHTML = '<div class="spinner"></div>查詢中...';
 
                 try {
-                    const routeRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route/${routeInput}`);
-                    const routeData = await routeRes.json();
+                    const stopData = await fetchWithRetry('https://data.etabus.gov.hk/v1/transport/kmb/stop');
+                    // 篩選半徑約 1km 內站點
+                    let nearbyStops = stopData.data.filter(s => {
+                        const d = Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111;
+                        s.dist = d;
+                        return d < 1.0;
+                    }).sort((a, b) => a.dist - b.dist);
+
+                    const directionMap = {};
+                    for (let stop of nearbyStops) {
+                        const data = await fetchWithRetry(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
+                        const buses = (data.data || []).filter(b => b.route === route);
+                        
+                        buses.forEach(b => {
+                            if (!directionMap[b.dest_tc]) directionMap[b.dest_tc] = [];
+                            let stopEntry = directionMap[b.dest_tc].find(e => e.stop === stop.stop);
+                            
+                            if (!stopEntry && directionMap[b.dest_tc].length < 3) {
+                                stopEntry = { stop: stop.stop, name: stop.name_tc, dist: stop.dist, etas: [] };
+                                directionMap[b.dest_tc].push(stopEntry);
+                            }
+                            
+                            if (stopEntry && stopEntry.etas.length < 2) {
+                                const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
+                                if (mins > 0) stopEntry.etas.push(mins);
+                            }
+                        });
+                    }
+
+                    // 渲染結果
+                    let html = "";
+                    for (const [dest, stops] of Object.entries(directionMap)) {
+                        html += `<div class="group-title">往 ${dest}</div>`;
+                        stops.forEach(s => {
+                            html += `<div class="card">
+                                <div class="stop-name">${s.name} (${s.dist.toFixed(2)}km)</div>
+                                ${s.etas.map(m => `<div class="bus-row"><span>預計到達</span><span class="eta-time">${m} 分鐘</span></div>`).join('')}
+                            </div>`;
+                        });
+                    }
+
+                    status.innerText = Object.keys(directionMap).length ? "" : "附近無此路線班次";
+                    output.innerHTML = html;
+                } catch(e) { status.innerText = "讀取失敗，請檢查網絡"; }
+            }, () => { status.innerText = "無法獲取定位權限"; });
+        }
+    </script>
+</body>
+</html>                    const routeData = await routeRes.json();
                     
                     if (!routeData.data || routeData.data.length === 0) throw new Error("路線不存在");
 
