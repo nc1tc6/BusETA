@@ -1,52 +1,54 @@
 import requests
 import json
+import time
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-}
+HEADERS = {"User-Agent": "Mozilla/5.0"}
+# 九巴基礎 API
+URL_KMB = "https://data.etabus.gov.hk/v1/transport/kmb/stop"
+# 城巴基礎 API (確保路徑精確)
+BASE_URL_CTB = "https://rt.data.gov.hk/v1/transport/citybus-nwfb"
 
-def fetch_stops():
-    all_stops = []
+def get_kmb_stops():
+    print("正在抓取九巴...")
+    try:
+        data = requests.get(URL_KMB, headers=HEADERS, timeout=15).json().get('data', [])
+        return [{"name": s.get('name_en'), "id": s.get('stop'), "type": "KMB"} for s in data]
+    except: return []
 
-    # 數據源列表
-    sources = [
-        {"name": "KMB", "url": "https://data.etabus.gov.hk/v1/transport/kmb/stop"},
-        {"name": "CTB", "url": "https://rt.data.gov.hk/v1/transport/citybus-nwfb/stop"},
-        {"name": "MTR", "url": "https://rt.data.gov.hk/v1/transport/mtr/bus/getStopList"},
-        {"name": "GMB", "url": "https://data.etagmb.gov.hk/stop"}
-    ]
-
-    for source in sources:
-        try:
-            print(f"正在抓取 {source['name']}...")
-            response = requests.get(source['url'], headers=HEADERS, timeout=15)
+def get_ctb_stops():
+    print("正在抓取城巴...")
+    all_ctb = []
+    seen_ids = set()
+    
+    try:
+        # 1. 取得所有路線
+        routes_url = f"{BASE_URL_CTB}/route/CTB"
+        routes = requests.get(routes_url, headers=HEADERS, timeout=15).json().get('data', [])
+        
+        # 2. 遍歷每條路線
+        for r in routes:
+            route_id = r.get('route')
+            # 嘗試抓取去程
+            url = f"{BASE_URL_CTB}/route-stop/CTB/{route_id}/outbound"
+            res = requests.get(url, headers=HEADERS, timeout=10)
             
-            # 檢查是否連線成功
-            if response.status_code != 200:
-                print(f"!!! {source['name']} 請求失敗，狀態碼: {response.status_code}")
-                continue
-                
-            data = response.json()
-            
-            # 解析數據 (不同 API 的結構可能不同，這裡檢查 'data' 層)
-            records = data.get('data', [])
-            
-            for s in records:
-                # 統一格式化：有些 ID 鍵值是 'stop', 有些是 'stop_id'
-                stop_id = s.get('stop') or s.get('stop_id')
-                if stop_id:
-                    all_stops.append({
-                        "name": s.get('name_en', 'Unknown'), 
-                        "id": stop_id, 
-                        "type": source['name']
-                    })
-            print(f"--- {source['name']} 成功，目前總數: {len(all_stops)}")
-            
-        except Exception as e:
-            print(f"!!! {source['name']} 發生未知錯誤: {str(e)}")
+            if res.status_code == 200:
+                stops = res.json().get('data', [])
+                for s in stops:
+                    stop_id = s.get('stop')
+                    if stop_id and stop_id not in seen_ids:
+                        all_ctb.append({"name": s.get('name_en'), "id": stop_id, "type": "CTB"})
+                        seen_ids.add(stop_id)
+            time.sleep(0.05) # 降低請求頻率，避免觸發防護機制
+    except Exception as e:
+        print(f"城巴抓取錯誤: {e}")
+    return all_ctb
 
+def update_all():
+    stops = get_kmb_stops() + get_ctb_stops()
     with open('stops.json', 'w', encoding='utf-8') as f:
-        json.dump(all_stops, f, ensure_ascii=False, indent=4)
+        json.dump(stops, f, ensure_ascii=False, indent=4)
+    print(f"完成！總計 {len(stops)} 個站點已儲存。")
 
 if __name__ == "__main__":
-    fetch_stops()
+    update_all()
