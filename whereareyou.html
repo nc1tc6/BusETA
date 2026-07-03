@@ -3,21 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>九巴到站搜尋器 (穩定版)</title>
+    <title>九巴到站搜尋器 (進階版)</title>
     <style>
-        body { font-family: -apple-system, sans-serif; padding: 20px; background: #f9f9f9; }
+        :root { --primary: #e31d2b; } /* 九巴紅 */
+        body { font-family: -apple-system, sans-serif; background: #f4f4f9; padding: 15px; }
         .container { max-width: 500px; margin: auto; }
-        .card { background: white; border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .controls { display: flex; gap: 5px; margin-bottom: 20px; }
-        input { flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
-        button { padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .card { background: white; padding: 16px; margin: 10px 0; border-radius: 12px; border-left: 5px solid var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { display: flex; gap: 8px; margin-bottom: 15px; }
+        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; }
+        button { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; }
+        .stop-info { font-size: 0.85rem; color: #666; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .bus-row { display: flex; justify-content: space-between; padding: 4px 0; }
+        .eta-time { font-weight: bold; color: var(--primary); }
     </style>
 </head>
 <body>
     <div class="container">
-        <h3>九巴實時到站搜尋</h3>
-        <div class="controls">
-            <input type="text" id="route" placeholder="路線 (如 6)">
+        <h3>九巴實時搜尋</h3>
+        <div class="header">
+            <input type="text" id="route" placeholder="輸入路線 (如 6)">
             <button onclick="startSearch()">搜尋</button>
         </div>
         <div id="status"></div>
@@ -25,66 +29,54 @@
     </div>
 
     <script>
-        // 具備重試機制的 Fetch，解決偶發 Load failed
         async function fetchWithRetry(url, retries = 2) {
-            try {
-                const res = await fetch(url);
-                if (!res.ok) throw new Error("HTTP Error");
-                return await res.json();
-            } catch (err) {
-                if (retries > 0) return fetchWithRetry(url, retries - 1);
-                throw err;
-            }
+            try { const res = await fetch(url); return await res.json(); }
+            catch (e) { if(retries > 0) return fetchWithRetry(url, retries - 1); throw e; }
         }
 
         async function startSearch() {
             const route = document.getElementById('route').value.trim().toUpperCase();
             const status = document.getElementById('status');
             const output = document.getElementById('output');
-            
-            if(!route) return alert("請輸入路線");
-            
-            output.innerHTML = "";
-            status.innerText = "定位中...";
+            if(!route) return;
 
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude: lat, longitude: lon } = pos.coords;
-                status.innerText = "正在搜尋附近站點...";
-
+                status.innerText = "搜尋中...";
+                
                 try {
                     const stopData = await fetchWithRetry('https://data.etabus.gov.hk/v1/transport/kmb/stop');
-                    const nearby = stopData.data.filter(s => 
-                        Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) < 0.005
-                    );
+                    
+                    // 1. 計算距離並加入陣列
+                    let nearby = stopData.data.map(s => ({
+                        ...s,
+                        dist: Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111 // 簡單距離估算(km)
+                    })).filter(s => s.dist < 0.8).sort((a, b) => a.dist - b.dist);
 
-                    if(nearby.length === 0) return status.innerText = "附近沒有站點";
+                    if(nearby.length === 0) return status.innerText = "附近無站點";
 
-                    status.innerText = `找到 ${nearby.length} 個站點，讀取資訊中...`;
-
-                    // 並行請求所有 ETA，速度快且不易被限流
-                    const etaResults = await Promise.all(nearby.map(async (stop) => {
+                    // 2. 獲取 ETA
+                    const results = await Promise.all(nearby.map(async (stop) => {
                         const data = await fetchWithRetry(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
-                        return { name: stop.name_tc, buses: data.data || [] };
+                        return { ...stop, buses: (data.data || []).filter(b => b.route === route) };
                     }));
 
+                    // 3. 渲染
+                    output.innerHTML = "";
                     status.innerText = "";
-                    etaResults.forEach(item => {
-                        const filtered = item.buses.filter(b => b.route === route);
-                        if(filtered.length > 0) {
-                            let html = `<div class="card"><strong>${item.name}</strong><br>`;
-                            filtered.forEach(b => {
-                                const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
-                                html += `路線 ${b.route} 往 ${b.dest_tc}: ${mins} 分鐘<br>`;
-                            });
-                            output.innerHTML += html + `</div>`;
-                        }
+                    results.filter(r => r.buses.length > 0).forEach(s => {
+                        let html = `<div class="card"><div class="stop-info">${s.name_tc} | ${s.dist.toFixed(2)}km</div>`;
+                        s.buses.forEach(b => {
+                            const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
+                            html += `<div class="bus-row">
+                                        <span>往 ${b.dest_tc}</span>
+                                        <span class="eta-time">${mins} 分鐘</span>
+                                     </div>`;
+                        });
+                        output.innerHTML += html + `</div>`;
                     });
-                    
-                    if(!output.innerHTML) status.innerText = "附近沒有該路線的班次";
-                } catch(err) {
-                    status.innerText = "讀取失敗，請檢查網路或重試";
-                }
-            }, () => status.innerText = "請允許定位權限");
+                } catch(e) { status.innerText = "讀取失敗"; }
+            });
         }
     </script>
 </body>
