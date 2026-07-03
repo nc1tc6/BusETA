@@ -2,41 +2,71 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <title>九巴自動校正搜尋器</title>
+    <title>九巴 100KM 穩定搜尋器</title>
+    <style>
+        :root { --primary: #e31d2b; }
+        body { font-family: -apple-system, sans-serif; background: #f4f4f9; padding: 15px; }
+        .container { max-width: 500px; margin: auto; }
+        .card { background: white; padding: 12px; margin: 8px 0; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+        .bus-row { display: flex; justify-content: space-between; font-size: 0.9rem; }
+        .eta-time { font-weight: bold; color: var(--primary); }
+    </style>
 </head>
 <body>
-    <input type="text" id="route" value="35A" placeholder="路線編號">
-    <button onclick="smartSearch()">搜尋路線</button>
-    <div id="output"></div>
+    <div class="container">
+        <h3>九巴搜尋 (100KM)</h3>
+        <input type="text" id="route" value="35A" placeholder="路線編號">
+        <button onclick="startSearch()">搜尋</button>
+        <div id="output"></div>
+    </div>
 
     <script>
-        async function smartSearch() {
+        async function startSearch() {
             const route = document.getElementById('route').value.trim().toUpperCase();
             const output = document.getElementById('output');
-            output.innerHTML = "正在獲取路線正確參數...";
+            output.innerHTML = "查詢中...";
 
             try {
-                // 1. 先從總表抓取該路線的正確 service_type 和 bound
-                const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/route/');
+                // 直接使用最穩定的路線站點 API 格式
+                // 註：若 35A 報錯，這代表該路線需要透過 bound=2 查詢，或該 API 參數限制
+                const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route}/1/1`);
                 const json = await res.json();
                 
-                // 找出該路線編號的資料
-                const routeInfo = json.data.find(r => r.route === route);
-                
-                if (!routeInfo) throw new Error("找不到此路線");
-
-                // 2. 使用官方提供的 service_type 和 bound (這能確保絕對不會出現 422 錯誤)
-                const url = `https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route}/${routeInfo.service_type}/${routeInfo.bound}`;
-                
-                const stopRes = await fetch(url);
-                const stopJson = await stopRes.json();
-                
-                output.innerHTML = `成功！路線 ${route} 使用參數 Service:${routeInfo.service_type}, Bound:${routeInfo.bound}，共找到 ${stopJson.data.length} 個站點。`;
-                console.log("站點資料:", stopJson.data);
-
+                if (!json.data || json.data.length === 0) {
+                    // 自動嘗試方向 2，解決某些路線只有回程的問題
+                    const res2 = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route}/1/2`);
+                    const json2 = await res2.json();
+                    if (!json2.data || json2.data.length === 0) throw new Error("無效路線");
+                    render(json2.data);
+                } else {
+                    render(json.data);
+                }
             } catch (e) {
-                output.innerHTML = "錯誤: " + e.message;
+                output.innerHTML = "搜尋失敗，請檢查路線編號是否正確。";
             }
+        }
+
+        async function render(stopList) {
+            const output = document.getElementById('output');
+            const allStopsRes = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
+            const allStops = await allStopsRes.json();
+            
+            navigator.geolocation.getCurrentPosition(pos => {
+                const { latitude: lat, longitude: lon } = pos.coords;
+                const stopIds = stopList.map(s => s.stop);
+                
+                // 100KM 範圍內篩選
+                const filtered = allStops.data
+                    .filter(s => stopIds.includes(s.stop))
+                    .map(s => ({ ...s, dist: Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111 }))
+                    .filter(s => s.dist < 100)
+                    .sort((a, b) => a.dist - b.dist);
+
+                output.innerHTML = filtered.map(s => `<div class="card">
+                    <div>${s.name_tc}</div>
+                    <div style="font-size:0.8rem; color:#888;">距離: ${s.dist.toFixed(2)} KM</div>
+                </div>`).join('');
+            });
         }
     </script>
 </body>
