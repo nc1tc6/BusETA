@@ -1,63 +1,124 @@
 <!DOCTYPE html>
-<html lang="zh-HK">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>巴士到站系統</title>
+    <title>Near by bus stop - KMB</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
-        .bus-card { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        :root { --primary: #6366f1; --accent: #ec4899; --bg: #f1f5f9; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); margin: 0; color: #1e293b; }
+        
+        .header { position: sticky; top: 0; z-index: 1000; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); padding: 16px; border-bottom: 2px solid #e2e8f0; }
+        .controls { display: flex; gap: 8px; max-width: 600px; margin: 0 auto; }
+        
+        input { flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; }
+        select { padding: 12px; border-radius: 12px; border: 2px solid #e2e8f0; background: white; }
+        button { padding: 12px 20px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; }
+
+        #status-bar { max-width: 600px; margin: 10px auto; padding: 0 16px; font-size: 0.9rem; color: #64748b; }
+        .container { max-width: 600px; margin: 10px auto; padding: 0 16px; }
+        .stop-card { background: white; padding: 20px; margin-bottom: 16px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border-left: 6px solid var(--primary); }
+        .eta-grid { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f8fafc; }
+        .dest { font-weight: 600; color: #334155; }
+        .mins { background: var(--accent); color: white; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 0.85rem; }
     </style>
 </head>
 <body>
 
-    <h1 id="status">正在載入數據...</h1>
-    <div id="bus-list"></div>
+    <div class="header">
+        <div class="controls">
+            <input type="text" id="routeInput" placeholder="Route (e.g. 6)">
+            <select id="langSelect">
+                <option value="en">EN</option>
+                <option value="tc">繁體</option>
+                <option value="sc">简体</option>
+            </select>
+            <button onclick="runSearch()">Find</button>
+        </div>
+    </div>
+
+    <div id="status-bar"></div>
+    <div class="container" id="results"></div>
 
     <script>
-        // 確保網頁架構已完全載入
-        document.addEventListener("DOMContentLoaded", function() {
-            
-            fetch('data.json?t=' + new Date().getTime())
-                .then(response => {
-                    if (!response.ok) throw new Error("讀取 data.json 失敗");
-                    return response.json();
-                })
-                .then(data => {
-                    const status = document.getElementById('status');
-                    const list = document.getElementById('bus-list');
-                    
-                    // 檢查數據是否存在
-                    const items = data.data || [];
-                    
-                    if (items.length === 0) {
-                        status.innerText = "目前沒有到站資料";
+        function setStatus(msg) { document.getElementById("status-bar").textContent = msg; }
+
+        async function runSearch() {
+            const route = document.getElementById("routeInput").value.toUpperCase();
+            const lang = document.getElementById("langSelect").value;
+            if(!route) { setStatus("Please enter a route."); return; }
+
+            const results = document.getElementById("results");
+            results.innerHTML = ""; 
+            setStatus("Locating...");
+
+            const langMap = { en: 'name_en', tc: 'name_tc', sc: 'name_sc' };
+            const destMap = { en: 'dest_en', tc: 'dest_tc', sc: 'dest_sc' };
+
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                try {
+                    const { latitude: lat, longitude: lon } = pos.coords;
+                    const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
+                    const { data: allStops } = await res.json();
+
+                    // 自動擴展半徑邏輯
+                    let radius = 0.5;
+                    let nearby = [];
+                    while (nearby.length === 0 && radius <= 2.0) {
+                        nearby = allStops.filter(s => getDistance(lat, lon, s.lat, s.long) < radius);
+                        if (nearby.length === 0) radius += 0.5;
+                    }
+
+                    if (nearby.length === 0) {
+                        setStatus("No stops found within 2km.");
                         return;
                     }
 
-                    status.innerText = "巴士實時到站時間";
-                    list.innerHTML = ''; // 清空載入中文字
+                    setStatus(`Found stops (Radius: ${radius}km). Fetching ETA...`);
 
-                    items.forEach(item => {
-                        const card = document.createElement('div');
-                        card.className = 'bus-card';
-                        
-                        // 處理時間顯示
-                        const timeStr = item.eta ? new Date(item.eta).toLocaleTimeString('zh-HK', {hour: '2-digit', minute:'2-digit'}) : '無資料';
-                        
-                        card.innerHTML = `
-                            <strong>路線: ${item.route}</strong><br>
-                            目的地: ${item.dest_en}<br>
-                            預計到達: ${timeStr}
-                        `;
-                        list.appendChild(card);
+                    // 使用 Promise.all 併發請求 ETA
+                    const etaPromises = nearby.map(stop => 
+                        fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`)
+                            .then(r => r.json())
+                            .then(data => ({ stop, etaData: data.data }))
+                    );
+
+                    const resultsData = await Promise.all(etaPromises);
+                    
+                    let foundAny = false;
+                    resultsData.forEach(({ stop, etaData }) => {
+                        const buses = etaData.filter(b => b.route === route);
+                        if (buses.length > 0) {
+                            foundAny = true;
+                            let stopName = stop[langMap[lang]] || stop.name_en;
+                            let html = `<div class="stop-card"><h3>${stopName}</h3>`;
+                            
+                            buses.slice(0, 3).forEach(b => {
+                                const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
+                                let destName = b[destMap[lang]] || b.dest_en;
+                                html += `<div class="eta-grid"><span class="dest">${destName}</span><span class="mins">${mins} min</span></div>`;
+                            });
+                            results.innerHTML += html + `</div>`;
+                        }
                     });
-                })
-                .catch(error => {
-                    document.getElementById('status').innerText = "發生錯誤: " + error.message;
-                    console.error("錯誤:", error);
-                });
-        });
+
+                    if (!foundAny) setStatus(`No upcoming buses for route ${route} nearby.`);
+                    else setStatus("");
+
+                } catch(e) {
+                    console.error(e);
+                    setStatus("Error loading data.");
+                }
+            }, () => setStatus("Location access denied."));
+        }
+
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
     </script>
 </body>
 </html>
