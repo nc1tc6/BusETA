@@ -1,45 +1,29 @@
-<!DOCTYPE html>
-<html lang="zh-HK">
-<head>
-    <meta charset="UTF-8">
-    <title>我的巴士到站時間</title>
-    <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
-        .bus-card { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h1 { color: #333; }
-    </style>
-</head>
-<body>
-    <h1>巴士實時到站時間</h1>
-    <div id="bus-list">正在讀取數據...</div>
+<script>
+    fetch('data.json?t=' + new Date().getTime())
+        .then(response => response.json())
+        .then(data => {
+            const listDiv = document.getElementById('bus-list');
+            listDiv.innerHTML = ''; 
 
-    <script>
-        fetch('data.json')
-            .then(response => response.json())
-            .then(data => {
-                const listDiv = document.getElementById('bus-list');
-                listDiv.innerHTML = ''; // 清空載入中提示
+            // 只取前 5 筆數據，避免重複與版面爆炸
+            const limitedData = data.data.slice(0, 5); 
 
-                // 假設 data.data 是一個數組，遍歷每一班次
-                data.data.forEach(bus => {
-                    // 計算還剩幾分鐘
-                    const etaTime = new Date(bus.eta);
-                    const now = new Date();
-                    const diff = Math.round((etaTime - now) / 60000);
-                    
-                    const card = document.createElement('div');
-                    card.className = 'bus-card';
-                    card.innerHTML = `
-                        <strong>路線: ${bus.route}</strong><br>
-                        目的地: ${bus.dest_en}<br>
-                        預計到達: ${diff > 0 ? diff + ' 分鐘後' : '即將到達'}
-                    `;
-                    listDiv.appendChild(card);
-                });
-            })
-            .catch(err => {
-                document.getElementById('bus-list').innerText = "載入失敗，請確保 data.json 已建立。";
+            limitedData.forEach(bus => {
+                const etaTime = new Date(bus.eta);
+                const now = new Date();
+                const diff = Math.round((etaTime - now) / 60000);
+                
+                const card = document.createElement('div');
+                card.className = 'bus-card';
+                card.innerHTML = `
+                    <strong>路線: ${bus.route}</strong><br>
+                    目的地: ${bus.dest_en}<br>
+                    預計到達: ${diff > 0 ? diff + ' 分鐘後' : '即將到達'}
+                `;
+                listDiv.appendChild(card);
             });
-    </script>
-</body>
-</html>
+        })
+        .catch(err => {
+            document.getElementById('bus-list').innerText = "載入數據中...";
+        });
+</script>
