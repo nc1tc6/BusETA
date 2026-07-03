@@ -1,33 +1,55 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
-<body onload="getAllBusStops()">
-    <div id="status">正在從所有路線反向挖掘站點代碼... (這會花一點時間)</div>
-    <div id="list"></div>
+<head>
+    <meta charset="UTF-8">
+    <title>九巴全站點網格查詢</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
+        .card { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .grid-header { font-weight: bold; background: #ddd; padding: 5px; margin-top: 15px; }
+    </style>
+</head>
+<body onload="init()">
+    <div id="status">正在下載全港站點庫 (僅需一次)...</div>
+    <div id="output"></div>
 
     <script>
-        async function getAllBusStops() {
-            const status = document.getElementById('status');
-            const list = document.getElementById('list');
-            
-            // 1. 抓取所有路線
-            const routesRes = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/route/');
-            const routes = (await routesRes.json()).data;
-            
-            const fullList = new Map();
+        // 1. 取得網格 KEY (將經緯度精確到小數點後兩位)
+        function getGridKey(lat, long) {
+            return `${Math.floor(lat * 100) / 100},${Math.floor(long * 100) / 100}`;
+        }
 
-            // 2. 遍歷每條路線 (為了保護你的請求不被封鎖，我們分批抓)
-            for (let r of routes.slice(0, 50)) { // 示範：抓前 50 條路線
-                try {
-                    const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${r.route}/${r.service_type}/${r.bound}`);
-                    const data = (await res.json()).data;
-                    data.forEach(s => {
-                        if (!fullList.has(s.stop)) fullList.set(s.stop, s.stop);
-                    });
-                } catch(e) {}
-            }
+        async function init() {
+            const status = document.getElementById('status');
             
-            status.innerHTML = `<h3>掃描完成，共找到 ${fullList.size} 個唯一代碼</h3>`;
-            list.innerHTML = Array.from(fullList.keys()).join('<br>');
+            try {
+                // 為了獲取包括隱藏月台在內的所有站點，我們必須使用一個綜合的數據源
+                // 如果 API 沒列出，這是九巴架構限制，此處我們使用官方公開 API
+                const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
+                const { data } = await res.json();
+                
+                status.innerHTML = "定位中...";
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const { latitude: lat, longitude: lon } = pos.coords;
+                    const myGrid = getGridKey(lat, lon);
+                    
+                    status.innerHTML = `<h4>目前網格: ${myGrid}</h4>`;
+                    
+                    // 2. 本地端篩選 (完全不會觸發讀取失敗)
+                    const localStops = data.filter(s => getGridKey(s.lat, s.long) === myGrid);
+                    
+                    const output = document.getElementById('output');
+                    localStops.forEach(s => {
+                        const div = document.createElement('div');
+                        div.className = 'card';
+                        div.innerHTML = `<strong>${s.name_tc}</strong><br><small>ID: ${s.stop}</small>`;
+                        div.onclick = () => window.open(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${s.stop}`, '_blank');
+                        output.appendChild(div);
+                    });
+                });
+            } catch (e) {
+                status.innerHTML = "載入失敗，請檢查網路。";
+            }
         }
     </script>
 </body>
