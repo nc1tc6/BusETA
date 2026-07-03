@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>九巴小助手</title>
+    <style>
+        :root { --primary: #e31d2b; }
+        body { font-family: sans-serif; background: #f4f4f9; padding: 15px; }
+        .container { max-width: 500px; margin: auto; }
+        .card { background: white; padding: 12px; margin: 8px 0; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+        .bus-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee; }
+        .eta-time { font-weight: bold; color: var(--primary); }
+        button { padding: 10px; border: none; border-radius: 4px; cursor: pointer; color: white; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3>九巴小助手</h3>
+        <input type="text" id="route" placeholder="路線 (選填, 如 6)" style="width: 100%; padding: 10px; box-sizing: border-box;">
+        <div style="display:flex; gap:10px;">
+            <button onclick="searchNearbyStops()" style="background:#333; flex:1;">尋找附近車站</button>
+        </div>
+        <div id="status" style="margin:10px 0; color:#666;"></div>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        let userPos = null;
+
+        // 取得定位
+        function getLocation() {
+            return new Promise((resolve, reject) => {
+                if (userPos) resolve(userPos);
+                navigator.geolocation.getCurrentPosition(pos => {
+                    userPos = pos.coords;
+                    resolve(userPos);
+                }, reject);
+            });
+        }
+
+        async function searchNearbyStops() {
+            const output = document.getElementById('output');
+            const status = document.getElementById('status');
+            const routeFilter = document.getElementById('route').value.trim().toUpperCase();
+            
+            output.innerHTML = "";
+            status.innerText = "定位中...";
+
+            try {
+                const pos = await getLocation();
+                status.innerText = "搜尋車站中...";
+                const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
+                const data = await res.json();
+
+                const nearby = data.data.map(s => ({
+                    ...s,
+                    dist: Math.sqrt((s.lat - pos.latitude)**2 + (s.long - pos.longitude)**2) * 111
+                })).filter(s => s.dist < 0.5).sort((a, b) => a.dist - b.dist);
+
+                if (nearby.length === 0) { status.innerText = "附近無車站"; return; }
+                
+                status.innerText = `找到 ${nearby.length} 個車站 (距離由近至遠)：`;
+                
+                for (let stop of nearby) {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `<strong>${stop.name_tc}</strong> (${stop.dist.toFixed(2)} km)`;
+                    card.onclick = () => fetchEta(stop.stop, stop.name_tc, routeFilter);
+                    output.appendChild(card);
+                }
+            } catch (e) { status.innerText = "發生錯誤"; }
+        }
+
+        async function fetchEta(stopId, stopName, routeFilter) {
+            const output = document.getElementById('output');
+            output.innerHTML = `<div>正在查詢 ${stopName} 的班次...</div>`;
+            
+            try {
+                const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stopId}`);
+                const data = await res.json();
+                let etas = data.data || [];
+                if (routeFilter) etas = etas.filter(e => e.route === routeFilter);
+
+                let html = `<h4>${stopName}</h4>`;
+                if (etas.length === 0) html += "<p>暫無班次資料</p>";
+                else {
+                    etas.forEach(e => {
+                        const mins = Math.max(0, Math.round((new Date(e.eta) - new Date()) / 60000));
+                        html += `<div class="bus-row"><span>${e.route} 往 ${e.dest_tc}</span><span class="eta-time">${mins} 分鐘</span></div>`;
+                    });
+                }
+                html += `<button onclick="searchNearbyStops()" style="background:#ccc; color:black;">返回車站列表</button>`;
+                output.innerHTML = html;
+            } catch (e) { output.innerHTML = "讀取失敗"; }
+        }
+    </script>
+</body>
+</html>
