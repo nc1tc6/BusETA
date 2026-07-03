@@ -1,26 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <title>Debug Test</title>
+    <title>九巴到站搜尋器</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+        .card { border: 1px solid #ccc; padding: 10px; margin: 10px 0; border-radius: 8px; }
+    </style>
 </head>
 <body>
-    <button onclick="testConnection()">測試連接九巴 API</button>
-    <div id="log"></div>
+    <input type="text" id="route" placeholder="輸入路線 (例如: 6)">
+    <button onclick="startSearch()">搜尋附近站點</button>
+    <div id="status"></div>
+    <div id="output"></div>
 
     <script>
-        async function testConnection() {
-            const log = document.getElementById("log");
-            log.innerText = "正在測試...";
-            try {
-                // 測試連線到九巴所有車站列表
-                const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
-                if (!res.ok) throw new Error("HTTP 錯誤: " + res.status);
-                const data = await res.json();
-                log.innerText = "成功！已讀取到 " + data.data.length + " 個車站資料。";
-            } catch (e) {
-                log.innerText = "失敗: " + e.message;
-            }
+        const status = document.getElementById('status');
+        const output = document.getElementById('output');
+
+        async function startSearch() {
+            const route = document.getElementById('route').value.trim().toUpperCase();
+            if(!route) return alert("請輸入路線");
+            
+            output.innerHTML = "";
+            status.innerText = "正在取得位置...";
+
+            // 1. 取得定位
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const { latitude: lat, longitude: lon } = pos.coords;
+                status.innerText = "正在搜尋站點...";
+
+                try {
+                    // 2. 獲取所有站點
+                    const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
+                    const { data: allStops } = await res.json();
+
+                    // 3. 找出半徑 0.5km 內的站點 (初步)
+                    const nearby = allStops.filter(s => {
+                        const dist = Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2);
+                        return dist < 0.005; // 大約 0.5km
+                    });
+
+                    if(nearby.length === 0) return status.innerText = "附近沒有站點";
+
+                    status.innerText = `找到 ${nearby.length} 個站點，正在查詢 ETA...`;
+
+                    // 4. 查詢這些站點的 ETA
+                    for(let stop of nearby) {
+                        const etaRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`);
+                        const { data: etaData } = await etaRes.json();
+                        
+                        const filtered = etaData.filter(e => e.route === route);
+                        if(filtered.length > 0) {
+                            let html = `<div class="card"><strong>${stop.name_tc}</strong><br>`;
+                            filtered.forEach(b => {
+                                const mins = Math.round((new Date(b.eta) - new Date()) / 60000);
+                                html += `路線 ${b.route} 往 ${b.dest_tc}: ${mins > 0 ? mins + '分鐘' : '即將抵達'}<br>`;
+                            });
+                            output.innerHTML += html + `</div>`;
+                        }
+                    }
+                    status.innerText = "搜尋完成";
+                } catch(err) {
+                    status.innerText = "錯誤: " + err.message;
+                }
+            }, () => status.innerText = "無法取得位置，請允許定位權限");
         }
     </script>
 </body>
