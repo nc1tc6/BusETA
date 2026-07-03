@@ -1,29 +1,44 @@
-<script>
-    fetch('data.json?t=' + new Date().getTime())
-        .then(response => response.json())
-        .then(data => {
-            const listDiv = document.getElementById('bus-list');
-            listDiv.innerHTML = ''; 
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <title>巴士到站系統</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+        .card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>實時巴士到站</h1>
+    <div id="status">正在更新中...</div>
+    <div id="bus-container"></div>
 
-            // 只取前 5 筆數據，避免重複與版面爆炸
-            const limitedData = data.data.slice(0, 5); 
-
-            limitedData.forEach(bus => {
-                const etaTime = new Date(bus.eta);
-                const now = new Date();
-                const diff = Math.round((etaTime - now) / 60000);
+    <script>
+        // 強制加個時間戳記，避免瀏覽器讀到過期的快取數據
+        fetch('data.json?t=' + new Date().getTime())
+            .then(res => {
+                if (!res.ok) throw new Error("找不到 data.json 檔案，請檢查 GitHub Actions 是否成功");
+                return res.json();
+            })
+            .then(data => {
+                const container = document.getElementById('bus-container');
+                document.getElementById('status').innerText = "數據更新時間: " + new Date().toLocaleTimeString();
                 
-                const card = document.createElement('div');
-                card.className = 'bus-card';
-                card.innerHTML = `
-                    <strong>路線: ${bus.route}</strong><br>
-                    目的地: ${bus.dest_en}<br>
-                    預計到達: ${diff > 0 ? diff + ' 分鐘後' : '即將到達'}
-                `;
-                listDiv.appendChild(card);
+                // 假設 data.json 的格式是 { "data": [...] }
+                const items = data.data || []; 
+                container.innerHTML = items.map(item => `
+                    <div class="card">
+                        <strong>路線: ${item.route}</strong><br>
+                        目的地: ${item.dest_en}<br>
+                        預計抵達: ${item.eta ? new Date(item.eta).toLocaleTimeString() : 'N/A'}
+                    </div>
+                `).join('');
+            })
+            .catch(err => {
+                document.getElementById('status').className = "error";
+                document.getElementById('status').innerText = "錯誤: " + err.message;
             });
-        })
-        .catch(err => {
-            document.getElementById('bus-list').innerText = "載入數據中...";
-        });
-</script>
+    </script>
+</body>
+</html>
