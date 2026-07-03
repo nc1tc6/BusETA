@@ -2,122 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Near by bus stop - KMB</title>
-    <style>
-        :root { --primary: #6366f1; --accent: #ec4899; --bg: #f1f5f9; }
-        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); margin: 0; color: #1e293b; }
-        
-        .header { position: sticky; top: 0; z-index: 1000; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); padding: 16px; border-bottom: 2px solid #e2e8f0; }
-        .controls { display: flex; gap: 8px; max-width: 600px; margin: 0 auto; }
-        
-        input { flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; }
-        select { padding: 12px; border-radius: 12px; border: 2px solid #e2e8f0; background: white; }
-        button { padding: 12px 20px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; }
-
-        #status-bar { max-width: 600px; margin: 10px auto; padding: 0 16px; font-size: 0.9rem; color: #64748b; }
-        .container { max-width: 600px; margin: 10px auto; padding: 0 16px; }
-        .stop-card { background: white; padding: 20px; margin-bottom: 16px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border-left: 6px solid var(--primary); }
-        .eta-grid { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f8fafc; }
-        .dest { font-weight: 600; color: #334155; }
-        .mins { background: var(--accent); color: white; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 0.85rem; }
-    </style>
+    <title>Debug Test</title>
 </head>
 <body>
-
-    <div class="header">
-        <div class="controls">
-            <input type="text" id="routeInput" placeholder="Route (e.g. 6)">
-            <select id="langSelect">
-                <option value="en">EN</option>
-                <option value="tc">繁體</option>
-                <option value="sc">简体</option>
-            </select>
-            <button onclick="runSearch()">Find</button>
-        </div>
-    </div>
-
-    <div id="status-bar"></div>
-    <div class="container" id="results"></div>
+    <button onclick="testConnection()">測試連接九巴 API</button>
+    <div id="log"></div>
 
     <script>
-        function setStatus(msg) { document.getElementById("status-bar").textContent = msg; }
-
-        async function runSearch() {
-            const route = document.getElementById("routeInput").value.toUpperCase();
-            const lang = document.getElementById("langSelect").value;
-            if(!route) { setStatus("Please enter a route."); return; }
-
-            const results = document.getElementById("results");
-            results.innerHTML = ""; 
-            setStatus("Locating...");
-
-            const langMap = { en: 'name_en', tc: 'name_tc', sc: 'name_sc' };
-            const destMap = { en: 'dest_en', tc: 'dest_tc', sc: 'dest_sc' };
-
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                try {
-                    const { latitude: lat, longitude: lon } = pos.coords;
-                    const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
-                    const { data: allStops } = await res.json();
-
-                    // 自動擴展半徑邏輯
-                    let radius = 0.5;
-                    let nearby = [];
-                    while (nearby.length === 0 && radius <= 2.0) {
-                        nearby = allStops.filter(s => getDistance(lat, lon, s.lat, s.long) < radius);
-                        if (nearby.length === 0) radius += 0.5;
-                    }
-
-                    if (nearby.length === 0) {
-                        setStatus("No stops found within 2km.");
-                        return;
-                    }
-
-                    setStatus(`Found stops (Radius: ${radius}km). Fetching ETA...`);
-
-                    // 使用 Promise.all 併發請求 ETA
-                    const etaPromises = nearby.map(stop => 
-                        fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`)
-                            .then(r => r.json())
-                            .then(data => ({ stop, etaData: data.data }))
-                    );
-
-                    const resultsData = await Promise.all(etaPromises);
-                    
-                    let foundAny = false;
-                    resultsData.forEach(({ stop, etaData }) => {
-                        const buses = etaData.filter(b => b.route === route);
-                        if (buses.length > 0) {
-                            foundAny = true;
-                            let stopName = stop[langMap[lang]] || stop.name_en;
-                            let html = `<div class="stop-card"><h3>${stopName}</h3>`;
-                            
-                            buses.slice(0, 3).forEach(b => {
-                                const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000));
-                                let destName = b[destMap[lang]] || b.dest_en;
-                                html += `<div class="eta-grid"><span class="dest">${destName}</span><span class="mins">${mins} min</span></div>`;
-                            });
-                            results.innerHTML += html + `</div>`;
-                        }
-                    });
-
-                    if (!foundAny) setStatus(`No upcoming buses for route ${route} nearby.`);
-                    else setStatus("");
-
-                } catch(e) {
-                    console.error(e);
-                    setStatus("Error loading data.");
-                }
-            }, () => setStatus("Location access denied."));
-        }
-
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        async function testConnection() {
+            const log = document.getElementById("log");
+            log.innerText = "正在測試...";
+            try {
+                // 測試連線到九巴所有車站列表
+                const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
+                if (!res.ok) throw new Error("HTTP 錯誤: " + res.status);
+                const data = await res.json();
+                log.innerText = "成功！已讀取到 " + data.data.length + " 個車站資料。";
+            } catch (e) {
+                log.innerText = "失敗: " + e.message;
+            }
         }
     </script>
 </body>
