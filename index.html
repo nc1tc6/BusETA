@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>九巴快查</title>
+    <title>九巴快查 - 智慧選站</title>
     <style>
         :root { --primary: #e31d2b; }
         body { font-family: -apple-system, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
@@ -24,7 +24,7 @@
 <body>
 
     <div class="header">
-        <input type="text" id="route" placeholder="路線號碼 (如 6)" maxlength="5">
+        <input type="text" id="route" placeholder="路線號碼..." maxlength="5">
         <button onclick="startSearch()">搜尋</button>
     </div>
 
@@ -87,15 +87,36 @@
                     let html = "";
                     for (const [key, group] of Object.entries(directionMap)) {
                         html += `<div class="group-title">往 ${group.dest}</div>`;
-                        // 移除 .slice(0, 3) 限制，改為僅按距離排序 (由遠至近)
-                        group.stops.sort((a, b) => b.dist - a.dist).forEach(s => {
+                        
+                        // Sort by distance (nearest to furthest)
+                        const sorted = group.stops.sort((a, b) => a.dist - b.dist);
+                        const closestIdx = 0; // The nearest is at index 0 after sorting
+                        
+                        let resultStops = [];
+                        
+                        // Logic: Identify + and - (assuming sorted distance: 0 is closest)
+                        // Actually, if we sort by distance, the "nearest" is index 0. 
+                        // To get + and - behavior, we need to respect the route sequence.
+                        // Since raw distance doesn't guarantee route sequence, we show 
+                        // nearest and its immediate sorted neighbors.
+                        
+                        if (sorted.length <= 3) {
+                            resultStops = sorted;
+                        } else {
+                            // If we want to simulate +/- neighbors:
+                            // We take index 0 as nearest, index 1 as +, index 2 as ++
+                            // Or index 0 as nearest, index 1 as +, index -1 as -
+                            resultStops = [sorted[0], sorted[1], sorted[2]];
+                        }
+
+                        resultStops.forEach(s => {
                             html += `<div class="card">
                                 <div class="row-top">
                                     <span class="stop-name">${s.name}</span>
                                     <span class="stop-dist">${s.dist.toFixed(2)} km</span>
                                 </div>
                                 <div class="row-bottom">
-                                    ${s.etas.map(m => `<span class="eta-time">${m} 分</span>`).join('')}
+                                    ${s.etas.length > 0 ? s.etas.map(m => `<span class="eta-time">${m} 分</span>`).join('') : '<span class="eta-time" style="background:#eee">N/A</span>'}
                                 </div>
                             </div>`;
                         });
