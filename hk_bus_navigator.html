@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全港巴士即時定向導航 (站名修復版)</title>
+    <title>全港巴士即時定向導航 (城巴站名修復版)</title>
     <style>
         :root { --primary: #007bff; --success: #28a745; --accent: #ffc107; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; margin: 0; background: #f8f9fa; color: #333; text-align: center; }
@@ -158,11 +158,11 @@
                     );
                     const stopsDetails = await Promise.all(stopPromises);
                     
-                    // 城巴站名欄位解析修正
+                    // 【關鍵修正】城巴最新官方 API 的繁體中文站名欄位為 data.name_tc
                     allStopsData = stopsDetails.map((sd, index) => ({
                         id: rawStopList[index].stopId,
                         seq: rawStopList[index].seq,
-                        name: sd.data ? sd.data.stop_name_tc : "未知車站",
+                        name: (sd.data && sd.data.name_tc) ? sd.data.name_tc : "未知車站",
                         lat: sd.data ? parseFloat(sd.data.lat) : 0,
                         lng: sd.data ? parseFloat(sd.data.long) : 0
                     }));
@@ -177,7 +177,6 @@
                     );
                     const stopsDetails = await Promise.all(stopPromises);
                     
-                    // 【關鍵修正】九巴站名欄位解析修正，改用 sd.data.name_tc 獲取繁體站名
                     allStopsData = stopsDetails.map((sd, index) => ({
                         id: rawStopList[index].stopId,
                         seq: rawStopList[index].seq,
