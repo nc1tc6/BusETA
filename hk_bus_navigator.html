@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全港巴士即時定向導航 (九巴+城巴)</title>
+    <style>
+        :root { --primary: #007bff; --success: #28a745; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; margin: 0; background: #f8f9fa; color: #333; text-align: center; }
+        h2 { color: #222; margin-bottom: 20px; }
+        .step-card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; text-align: left; }
+        .step-title { font-weight: bold; color: var(--primary); margin-bottom: 10px; display: flex; align-items: center; }
+        input, select, button { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; }
+        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:disabled { background: #ccc; }
+        #compass-container { display: none; text-align: center; margin-top: 20px; }
+        #arrow { width: 150px; height: 150px; margin: 20px auto; transition: transform 0.1s ease; position: relative; }
+        #arrow-img { width: 100%; height: 100%; transform: rotate(0deg); }
+        .info-box { background: #e9ecef; padding: 10px; border-radius: 6px; font-size: 14px; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+    <h2>🚌 全港巴士定向導航工具</h2>
+
+    <div class="step-card">
+        <div class="step-title">第一步：選擇巴士公司與路線</div>
+        <select id="companySelect">
+            <option value="KMB">九巴 (KMB)</option>
+            <option value="CTB">城巴 (CTB)</option>
+        </select>
+        <input type="text" id="routeInput" placeholder="例如: 1A, 102, 968" value="1A">
+        <button onclick="fetchRouteDirections()">搜尋路線方向</button>
+    </div>
+
+    <div class="step-card" id="step2" style="display:none;">
+        <div class="step-title">第二步：選擇行車方向</div>
+        <select id="dirSelect" onchange="fetchBusStops()">
+            <option value="">-- 請選擇方向 --</option>
+        </select>
+    </div>
+
+    <div class="step-card" id="step3" style="display:none;">
+        <div class="step-title">第三步：最近嘅巴士站</div>
+        <div id="gpsStatus" class="info-box">正在獲取你嘅 GPS 位置...</div>
+        <div id="nearestStopInfo" style="margin-top:10px; font-weight:bold; color:var(--success);"></div>
+        <button id="startNavBtn" onclick="initCompass()" style="background:var(--success); margin-top:10px;" disabled>第四步：開始即時定向</button>
+    </div>
+
+    <div id="compass-container" class="step-card">
+        <div class="step-title" style="justify-content: center;">第四步：跟隨箭頭行進</div>
+        <div id="distanceDisplay" style="font-size: 20px; font-weight:bold;">距離目標：-- 米</div>
+        <div id="arrow">
+            <svg id="arrow-img" viewBox="0 0 100 100">
+                <polygon points="50,5 95,85 50,65 5,85" fill="#28a745" />
+            </svg>
+        </div>
+        <div id="phoneStatus" class="info-box">請將電話平放或垂直面向前方</div>
+    </div>
+
+    <script>
+        let currentCompany = "";
+        let userLat = null, userLng = null;
+        let targetLat = null, targetLng = null;
+        let targetStopName = "";
+        let watchId = null;
+
+        // 【第一步】去九巴或城巴 API 查呢條線嘅去向
+        async function fetchRouteDirections() {
+            currentCompany = document.getElementById('companySelect').value;
+            const route = document.getElementById('routeInput').value.trim().toUpperCase();
+            if(!route) return alert('請輸入路線！');
+            
+            try {
+                let url = "";
+                let directions = [];
+
+                if (currentCompany === "CTB") {
+                    // 城巴 API 格式
+                    url = `https://rt.data.gov.hk/v1/transport/citybus-nwfb/route/${currentCompany}/${route}`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    if(!data.data || data.data.length === 0) return alert('搵唔到呢條城巴路線！');
+                    directions = [['outbound', '往 ' + data.data[0].dest_tc], ['inbound', '往 ' + data.data[0].orig_tc]];
+                } else {
+                    // 九巴 API 格式 (九巴的特點是直接提供 inbound/outbound 兩條獨立 data)
+                    url = `https://data.etabus.gov.hk/v1/transport/kmb/route/${route}`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    if(!data.data || data.data.length === 0) return alert('搵唔到呢條九巴路線！');
+                    
+                    // 篩選出繁體中文方向
+                    data.data.forEach(item => {
+                        let dirKey = item.bound === "O" ? "outbound" : "inbound";
+                        directions.push([dirKey, '往 ' + item.dest_tc]);
+                    });
+                }
+
+                const dirSelect = document.getElementById('dirSelect');
+                dirSelect.innerHTML = '<option value="">-- 請選擇方向 --</option>';
+                
+                directions.forEach(([dir, text]) => {
+                    let opt = document.createElement('option');
+                    opt.value = dir;
+                    opt.text = text;
+                    dirSelect.appendChild(opt);
+                });
+
+                document.getElementById('step2').style.display = 'block';
+                document.getElementById('step3').style.display = 'none';
+                document.getElementById('compass-container').style.display = 'none';
+            } catch (err) {
+                alert('連線失敗: ' + err);
+            }
+        }
+
+        // 【第二步 & 第三步】獲取車站並計算最近距離
+        async function fetchBusStops() {
+            const route = document.getElementById('routeInput').value.trim().toUpperCase();
+            const dir = document.getElementById('dirSelect').value;
+            if(!dir) return;
+
+            document.getElementById('step3').style.display = 'block';
+            document.getElementById('gpsStatus').innerText = "正在下載車站數據並定位中...";
+
+            try {
+                let stopList = [];
+                let nearestStop = null;
+                let minDistance = Infinity;
+
+                // 獲取用家 GPS
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    userLat = position.coords.latitude;
+                    userLng = position.coords.longitude;
+                    document.getElementById('gpsStatus').innerHTML = `我嘅位置: ${userLat.toFixed(4)}, ${userLng.toFixed(4)}`;
+
+                    if (currentCompany === "CTB") {
+                        // 【城巴邏輯】
+                        const routeStopsRes = await fetch(`https://rt.data.gov.hk/v1/transport/citybus-nwfb/route-stop/${currentCompany}/${route}/${dir}`);
+                        const routeStopsData = await routeStopsRes.json();
+                        
+                        // 平行 Fetch 城巴車站詳細經緯度
+                        const stopPromises = routeStopsData.data.map(s => 
+                            fetch(`https://rt.data.gov.hk/v1/transport/citybus-nwfb/stop/${s.stop}`).then(r => r.json())
+                        );
+                        const stopsDetails = await Promise.all(stopPromises);
+
+                        stopsDetails.forEach(stopData => {
+                            const stop = stopData.data;
+                            const dist = getHaversineDistance(userLat, userLng, parseFloat(stop.lat), parseFloat(stop.long));
+                            if(dist < minDistance) {
+                                minDistance = dist;
+                                nearestStop = { name: stop.stop_name_tc, lat: stop.lat, long: stop.long };
+                            }
+                        });
+
+                    } else {
+                        // 【九巴邏輯】九巴好方便，一個 API 直接塞晒所有站同埋坐標畀你
+                        const kmbBound = dir === "outbound" ? "outbound" : "inbound";
+                        const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route}/${kmbBound}/1`);
+                        const data = await res.json();
+                        
+                        // 平行 Fetch 九巴車站詳細資料（包括座標）
+                        const stopPromises = data.data.map(s => 
+                            fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop/${s.stop}`).then(r => r.json())
+                        );
+                        const stopsDetails = await Promise.all(stopPromises);
+
+                        stopsDetails.forEach(stopData => {
+                            const stop = stopData.data;
+                            const dist = getHaversineDistance(userLat, userLng, parseFloat(stop.lat), parseFloat(stop.long));
+                            if(dist < minDistance) {
+                                minDistance = dist;
+                                nearestStop = { name: stop.stop_name_tc, lat: stop.lat, long: stop.long };
+                            }
+                        });
+                    }
+
+                    if(nearestStop) {
+                        targetLat = parseFloat(nearestStop.lat);
+                        targetLng = parseFloat(nearestStop.long);
+                        targetStopName = nearestStop.name;
+                        
+                        document.getElementById('nearestStopInfo').innerHTML = `
+                            🎯 系統已自動鎖定最近車站：<br>
+                            <span style="font-size:18px;">[${currentCompany}] ${targetStopName}</span><br>
+                            直線距離：約 ${(minDistance * 1000).toFixed(0)} 米
+                        `;
+                        document.getElementById('startNavBtn').disabled = false;
+                    }
+                }, (err) => {
+                    document.getElementById('gpsStatus').innerText = "GPS 定位失敗，請確保手機開咗定位權限。";
+                }, { enableHighAccuracy: true });
+
+            } catch (err) {
+                alert('獲取車站失敗: ' + err);
+            }
+        }
+
+        // 地球表面兩點距離計算法 (Haversine Formula)
+        function getHaversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        // 計算兩點之間嘅絕對方位角 (Bearing)
+        function getBearing(lat1, lng1, lat2, lng2) {
+            const dLon = (lng2 - lng1) * Math.PI / 180;
+            const lat1Rad = lat1 * Math.PI / 180;
+            const lat2Rad = lat2 * Math.PI / 180;
+            const y = Math.sin(dLon) * Math.cos(lat2Rad);
+            const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLon);
+            return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+        }
+
+        // 【第四步】啟動電子羅盤
+        function initCompass() {
+            document.getElementById('compass-container').style.display = 'block';
+            
+            if(watchId) navigator.geolocation.clearWatch(watchId);
+            watchId = navigator.geolocation.watchPosition((pos) => {
+                userLat = pos.coords.latitude;
+                userLng = pos.coords.longitude;
+                const d = getHaversineDistance(userLat, userLng, targetLat, targetLng);
+                document.getElementById('distanceDisplay').innerText = `距離目標：約 ${(d * 1000).toFixed(0)} 米`;
+            }, null, { enableHighAccuracy: true });
+
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            window.addEventListener('deviceorientation', handleOrientation, true);
+                        } else {
+                            alert('你需要允許羅盤權限先可以用到定向導航！');
+                        }
+                    }).catch(console.error);
+            } else {
+                window.addEventListener('deviceorientation', handleOrientation, true);
+            }
+        }
+
+        function handleOrientation(event) {
+            let heading = event.webkitCompassHeading || event.alpha;
+            if (heading !== null && heading !== undefined) {
+                if(!event.webkitCompassHeading) heading = 360 - heading; 
+
+                const bearing = getBearing(userLat, userLng, targetLat, targetLng);
+                let arrowAngle = bearing - heading;
+
+                if (window.orientation === 90) arrowAngle -= 90;
+                else if (window.orientation === -90) arrowAngle += 90;
+
+                document.getElementById('arrow-img').style.transform = `rotate(${arrowAngle}deg)`;
+            }
+        }
+    </script>
+</body>
+</html>
