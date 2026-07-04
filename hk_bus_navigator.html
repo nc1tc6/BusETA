@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全港巴士即時定向導航 (班次+站名版)</title>
+    <title>全港巴士即時定向導航 (站名修復版)</title>
     <style>
         :root { --primary: #007bff; --success: #28a745; --accent: #ffc107; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; margin: 0; background: #f8f9fa; color: #333; text-align: center; }
@@ -18,7 +18,6 @@
         #arrow-img { width: 100%; height: 100%; transform: rotate(0deg); }
         .info-box { background: #e9ecef; padding: 10px; border-radius: 6px; font-size: 14px; margin-top: 5px; }
         
-        /* 新增：車站列表與班次樣式 */
         .stop-list { margin-top: 15px; max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; padding: 5px; background: #fff; }
         .stop-item { padding: 10px; border-bottom: 1px solid #f1f1f1; cursor: pointer; font-size: 15px; display: flex; justify-content: space-between; }
         .stop-item:hover, .stop-item.active { background: #e3f2fd; font-weight: bold; }
@@ -83,9 +82,9 @@
         let userLat = null, userLng = null;
         let targetLat = null, targetLng = null;
         let targetStopName = "";
-        let targetStopId = ""; // 新增：用作查 ETA 的車站 ID
+        let targetStopId = ""; 
         let watchId = null;
-        let allStopsData = []; // 儲存當前路線的所有車站詳情
+        let allStopsData = []; 
 
         // 【第一步】搜尋路線方向
         async function fetchRouteDirections() {
@@ -134,7 +133,7 @@
             }
         }
 
-        // 【第二步 & 第三步】獲取車站、列出所有站名並找出最近車站
+        // 【第二步 & 第三步】獲取車站、解析站名、比對最近車站
         async function fetchBusStops() {
             const route = document.getElementById('routeInput').value.trim().toUpperCase();
             const dir = document.getElementById('dirSelect').value;
@@ -158,12 +157,14 @@
                         fetch(`https://rt.data.gov.hk/v1/transport/citybus-nwfb/stop/${s.stopId}`).then(r => r.json())
                     );
                     const stopsDetails = await Promise.all(stopPromises);
+                    
+                    // 城巴站名欄位解析修正
                     allStopsData = stopsDetails.map((sd, index) => ({
                         id: rawStopList[index].stopId,
                         seq: rawStopList[index].seq,
-                        name: sd.data.stop_name_tc,
-                        lat: parseFloat(sd.data.lat),
-                        lng: parseFloat(sd.data.long)
+                        name: sd.data ? sd.data.stop_name_tc : "未知車站",
+                        lat: sd.data ? parseFloat(sd.data.lat) : 0,
+                        lng: sd.data ? parseFloat(sd.data.long) : 0
                     }));
                 } else {
                     const kmbBound = dir === "outbound" ? "outbound" : "inbound";
@@ -175,12 +176,14 @@
                         fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop/${s.stopId}`).then(r => r.json())
                     );
                     const stopsDetails = await Promise.all(stopPromises);
+                    
+                    // 【關鍵修正】九巴站名欄位解析修正，改用 sd.data.name_tc 獲取繁體站名
                     allStopsData = stopsDetails.map((sd, index) => ({
                         id: rawStopList[index].stopId,
                         seq: rawStopList[index].seq,
-                        name: sd.data.stop_name_tc,
-                        lat: parseFloat(sd.data.lat),
-                        lng: parseFloat(sd.data.long)
+                        name: sd.data ? sd.data.name_tc : "未知車站",
+                        lat: sd.data ? parseFloat(sd.data.lat) : 0,
+                        lng: sd.data ? parseFloat(sd.data.long) : 0
                     }));
                 }
 
@@ -195,14 +198,13 @@
 
                     allStopsData.forEach(stop => {
                         const dist = getHaversineDistance(userLat, userLng, stop.lat, stop.lng);
-                        stop.distance = dist; // 順便紀錄埋距離
+                        stop.distance = dist; 
                         if(dist < minDistance) {
                             minDistance = dist;
                             nearestStop = stop;
                         }
                     });
 
-                    // 渲染車站列表到網頁上
                     renderStopList(nearestStop ? nearestStop.id : null);
 
                     if(nearestStop) {
@@ -239,9 +241,7 @@
                     <span style="font-size:12px; color:#888;">${distText}</span>
                 `;
                 
-                // 點擊車站可以切換導航目標並查班次
                 item.onclick = () => {
-                    // 清除舊選取樣式
                     document.querySelectorAll('.stop-item').forEach(el => el.classList.remove('active'));
                     item.classList.add('active');
                     
@@ -253,7 +253,6 @@
             });
         }
 
-        // 當選定了某個站（不論自動定手動點擊），就去查班次
         function selectTargetStop(id, name, lat, lng) {
             targetStopId = id;
             targetStopName = name;
@@ -264,7 +263,7 @@
             fetchETA(id, name);
         }
 
-        // 新增：獲取實時班次資料 (ETA)
+        // 獲取實時班次資料 (ETA)
         async function fetchETA(stopId, stopName) {
             const etaContainer = document.getElementById('etaContainer');
             const etaList = document.getElementById('etaList');
@@ -290,22 +289,18 @@
                     return;
                 }
 
-                // 篩選符合目前行車方向嘅班次（避免聯營或循環線混亂）
                 const dir = document.getElementById('dirSelect').value;
                 let matchedEta = data.data;
                 
                 if(currentCompany === "CTB") {
-                    // 城巴方向通常對應 dir 選單
                     matchedEta = data.data.filter(item => item.dir === (dir === "outbound" ? "O" : "I"));
                 } else {
-                    // 九巴對應 bound
                     matchedEta = data.data.filter(item => item.dir === (dir === "outbound" ? "O" : "I"));
                 }
 
-                if(matchedEta.length === 0) matchedEta = data.data; // 如果篩選完無，就用返原始數據
+                if(matchedEta.length === 0) matchedEta = data.data;
 
                 etaList.innerHTML = "";
-                // 只取前 3 班車
                 matchedEta.slice(0, 3).forEach((item, index) => {
                     if(!item.eta) return;
                     
@@ -335,13 +330,12 @@
             }
         }
 
-        // 其餘數學計算法與指南針邏輯保持不變
         function getHaversineDistance(lat1, lon1, lat2, lon2) {
             const R = 6371; 
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      document.getElementById('startNavBtn') && Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
