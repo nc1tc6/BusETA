@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全港巴士即時定向導航 (九巴+城巴)</title>
+    <title>全港巴士即時定向導航 (修正版)</title>
     <style>
         :root { --primary: #007bff; --success: #28a745; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; margin: 0; background: #f8f9fa; color: #333; text-align: center; }
@@ -29,7 +29,7 @@
             <option value="KMB">九巴 (KMB)</option>
             <option value="CTB">城巴 (CTB)</option>
         </select>
-        <input type="text" id="routeInput" placeholder="例如: 1A, 102, 968" value="1A">
+        <input type="text" id="routeInput" placeholder="例如: 1A, 102, 948" value="948">
         <button onclick="fetchRouteDirections()">搜尋路線方向</button>
     </div>
 
@@ -65,32 +65,36 @@
         let targetStopName = "";
         let watchId = null;
 
-        // 【第一步】去九巴或城巴 API 查呢條線嘅去向
+        // 【第一步】搜尋路線方向（已修正九巴與城巴的 API 讀取邏輯）
         async function fetchRouteDirections() {
             currentCompany = document.getElementById('companySelect').value;
             const route = document.getElementById('routeInput').value.trim().toUpperCase();
             if(!route) return alert('請輸入路線！');
             
             try {
-                let url = "";
                 let directions = [];
 
                 if (currentCompany === "CTB") {
-                    // 城巴 API 格式
-                    url = `https://rt.data.gov.hk/v1/transport/citybus-nwfb/route/${currentCompany}/${route}`;
-                    const res = await fetch(url);
+                    // 【城巴修正】城巴返回的是單個 Object，直接讀取 data.data.dest_tc
+                    const res = await fetch(`https://rt.data.gov.hk/v1/transport/citybus-nwfb/route/${currentCompany}/${route}`);
                     const data = await res.json();
-                    if(!data.data || data.data.length === 0) return alert('搵唔到呢條城巴路線！');
-                    directions = [['outbound', '往 ' + data.data[0].dest_tc], ['inbound', '往 ' + data.data[0].orig_tc]];
-                } else {
-                    // 九巴 API 格式 (九巴的特點是直接提供 inbound/outbound 兩條獨立 data)
-                    url = `https://data.etabus.gov.hk/v1/transport/kmb/route/${route}`;
-                    const res = await fetch(url);
-                    const data = await res.json();
-                    if(!data.data || data.data.length === 0) return alert('搵唔到呢條九巴路線！');
+                    if(!data.data || Object.keys(data.data).length === 0) return alert('搵唔到呢條城巴路線！');
                     
-                    // 篩選出繁體中文方向
-                    data.data.forEach(item => {
+                    directions = [
+                        ['outbound', '往 ' + data.data.dest_tc], 
+                        ['inbound', '往 ' + data.data.orig_tc]
+                    ];
+                } else {
+                    // 【九巴修正】改用拉取全線總列表後進行前端 Filter，解決特定路線找不到的問題
+                    const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route`);
+                    const data = await res.json();
+                    if(!data.data) return alert('九巴系統連線失敗！');
+                    
+                    // 篩選出匹配輸入號碼的路線
+                    const matchedRoutes = data.data.filter(item => item.route === route);
+                    if(matchedRoutes.length === 0) return alert('搵唔到呢條九巴路線！');
+                    
+                    matchedRoutes.forEach(item => {
                         let dirKey = item.bound === "O" ? "outbound" : "inbound";
                         directions.push([dirKey, '往 ' + item.dest_tc]);
                     });
@@ -99,7 +103,9 @@
                 const dirSelect = document.getElementById('dirSelect');
                 dirSelect.innerHTML = '<option value="">-- 請選擇方向 --</option>';
                 
-                directions.forEach(([dir, text]) => {
+                // 去重處理（防止重複方向出現）
+                const uniqueDirs = Array.from(new Set(directions.map(JSON.stringify))).map(JSON.parse);
+                uniqueDirs.forEach(([dir, text]) => {
                     let opt = document.createElement('option');
                     opt.value = dir;
                     opt.text = text;
@@ -124,22 +130,19 @@
             document.getElementById('gpsStatus').innerText = "正在下載車站數據並定位中...";
 
             try {
-                let stopList = [];
                 let nearestStop = null;
                 let minDistance = Infinity;
 
-                // 獲取用家 GPS
                 navigator.geolocation.getCurrentPosition(async (position) => {
                     userLat = position.coords.latitude;
                     userLng = position.coords.longitude;
                     document.getElementById('gpsStatus').innerHTML = `我嘅位置: ${userLat.toFixed(4)}, ${userLng.toFixed(4)}`;
 
                     if (currentCompany === "CTB") {
-                        // 【城巴邏輯】
+                        // 城巴下載車站列表
                         const routeStopsRes = await fetch(`https://rt.data.gov.hk/v1/transport/citybus-nwfb/route-stop/${currentCompany}/${route}/${dir}`);
                         const routeStopsData = await routeStopsRes.json();
                         
-                        // 平行 Fetch 城巴車站詳細經緯度
                         const stopPromises = routeStopsData.data.map(s => 
                             fetch(`https://rt.data.gov.hk/v1/transport/citybus-nwfb/stop/${s.stop}`).then(r => r.json())
                         );
@@ -155,12 +158,11 @@
                         });
 
                     } else {
-                        // 【九巴邏輯】九巴好方便，一個 API 直接塞晒所有站同埋坐標畀你
+                        // 九巴下載車站列表
                         const kmbBound = dir === "outbound" ? "outbound" : "inbound";
                         const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route}/${kmbBound}/1`);
                         const data = await res.json();
                         
-                        // 平行 Fetch 九巴車站詳細資料（包括座標）
                         const stopPromises = data.data.map(s => 
                             fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop/${s.stop}`).then(r => r.json())
                         );
@@ -197,7 +199,6 @@
             }
         }
 
-        // 地球表面兩點距離計算法 (Haversine Formula)
         function getHaversineDistance(lat1, lon1, lat2, lon2) {
             const R = 6371; 
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -207,7 +208,6 @@
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
-        // 計算兩點之間嘅絕對方位角 (Bearing)
         function getBearing(lat1, lng1, lat2, lng2) {
             const dLon = (lng2 - lng1) * Math.PI / 180;
             const lat1Rad = lat1 * Math.PI / 180;
@@ -217,7 +217,6 @@
             return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
         }
 
-        // 【第四步】啟動電子羅盤
         function initCompass() {
             document.getElementById('compass-container').style.display = 'block';
             
