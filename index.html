@@ -1,106 +1,390 @@
-<!DOCTYPE html> 
-<html lang="zh-HK"> 
-<head> 
-    <meta charset="UTF-8"> 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-    <title>九巴巴士站 - 搜尋器</title> 
-    <style> 
-        :root { --primary: #e31d2b; } 
-        body { font-family: -apple-system, sans-serif; background: #f4f4f9; padding: 15px; } 
-        .container { max-width: 500px; margin: auto; } 
-        .group-title { font-size: 1.2rem; color: #333; margin: 20px 0 10px; font-weight: bold; border-left: 5px solid var(--primary); padding-left: 10px; } 
-        .card { background: white; padding: 12px; margin: 8px 0; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); } 
-        .stop-name { font-size: 0.85rem; color: #666; font-weight: bold; margin-bottom: 5px; } 
-        .bus-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 0.9rem; } 
-        .eta-time { font-weight: bold; color: var(--primary); } 
-    </style> 
-</head> 
-<body> 
-    <div class="container"> 
-        <h3>九巴巴士站 - 搜尋器</h3> 
-        <div style="display:flex; gap:5px;"> 
-            <input type="text" id="route" placeholder="路線 (如 6)" style="flex:1; padding:10px;"> 
-            <button onclick="startSearch()" style="padding:10px; background:var(--primary); color:white; border:none; border-radius:4px;">搜尋</button> 
-        </div> 
-        <div id="status" style="margin:10px 0; color:#666;"></div> 
-        <div id="output"></div> 
-    </div> 
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全港巴士即時定向導航</title>
+    <style>
+        :root { --primary: #007bff; --success: #28a745; --accent: #ffc107; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; margin: 0; background: #f8f9fa; color: #333; text-align: center; }
+        h2 { color: #222; margin-bottom: 20px; }
+        .step-card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; text-align: left; }
+        .step-title { font-weight: bold; color: var(--primary); margin-bottom: 10px; display: flex; align-items: center; }
+        input, select, button { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; }
+        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:disabled { background: #ccc; }
+        #compass-container { display: none; text-align: center; margin-top: 20px; }
+        #arrow { width: 150px; height: 150px; margin: 20px auto; transition: transform 0.1s ease; position: relative; }
+        #arrow-img { width: 100%; height: 100%; transform: rotate(0deg); }
+        .info-box { background: #e9ecef; padding: 10px; border-radius: 6px; font-size: 14px; margin-top: 5px; }
+        
+        .stop-list { margin-top: 15px; max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; padding: 5px; background: #fff; }
+        .stop-item { padding: 10px; border-bottom: 1px solid #f1f1f1; cursor: pointer; font-size: 15px; display: flex; justify-content: space-between; }
+        .stop-item:hover, .stop-item.active { background: #e3f2fd; font-weight: bold; }
+        .nearest-badge { background: var(--success); color: white; font-size: 11px; padding: 2px 6px; border-radius: 10px; }
+        .eta-container { background: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 6px; margin-top: 10px; display: none; text-align: left; }
+        .eta-title { font-weight: bold; color: #856404; margin-bottom: 5px; }
+        .eta-time { font-size: 14px; color: #333; margin: 3px 0; }
+    </style>
+</head>
+<body>
 
-    <script> 
-        async function fetchWithRetry(url, retries = 2) { 
-            try { const res = await fetch(url); return await res.json(); } 
-            catch (e) { if(retries > 0) return fetchWithRetry(url, retries - 1); throw e; } 
-        } 
+    <div class="step-card">
+        <div class="step-title">第一步：選擇巴士公司與路線</div>
+        <select id="companySelect">
+            <option value="KMB">九巴 (KMB)</option>
+            <option value="CTB">城巴 (CTB)</option>
+        </select>
+        <input type="text" id="routeInput" placeholder="例如: 1A, 102, 948" value="948">
+        <button onclick="fetchRouteDirections()">搜尋路線方向</button>
+    </div>
 
-        async function startSearch() { 
-            const route = document.getElementById('route').value.trim().toUpperCase(); 
-            const status = document.getElementById('status'); 
-            const output = document.getElementById('output'); 
-            if(!route) return; 
-             
-            output.innerHTML = ""; 
-            status.innerText = "定位中..."; 
+    <div class="step-card" id="step2" style="display:none;">
+        <div class="step-title">第二步：選擇行車方向</div>
+        <select id="dirSelect" onchange="fetchBusStops()">
+            <option value="">-- 請選擇方向 --</option>
+        </select>
+    </div>
 
-            navigator.geolocation.getCurrentPosition(async (pos) => { 
-                const { latitude: lat, longitude: lon } = pos.coords; 
-                status.innerText = "查詢中..."; 
+    <div class="step-card" id="step3" style="display:none;">
+        <div class="step-title">第三步：最近車站與路線名單</div>
+        <div id="gpsStatus" class="info-box">正在獲取你嘅 GPS 位置...</div>
+        
+        <div id="nearestStopInfo" style="margin-top:10px; font-weight:bold; color:var(--success);"></div>
+        
+        <div id="etaContainer" class="eta-container">
+            <div id="etaTitle" class="eta-title">🕒 即時班次時間</div>
+            <div id="etaList">正在載入班次...</div>
+        </div>
 
-                try { 
-                    const stopData = await fetchWithRetry('https://data.etabus.gov.hk/v1/transport/kmb/stop'); 
-                    let allNearby = stopData.data.map(s => ({ 
-                        ...s, 
-                        dist: Math.sqrt((s.lat - lat)**2 + (s.long - lon)**2) * 111 
-                    })).filter(s => s.dist < 1.0).sort((a, b) => a.dist - b.dist); 
+        <div style="margin-top:10px; font-size:14px; font-weight:bold; color:#666;">🗺️ 路線車站列表 (點擊可查看該站班次與導航)</div>
+        <div id="stopListContainer" class="stop-list"></div>
 
-                    const directionMap = {};  
+        <button id="startNavBtn" onclick="initCompass()" style="background:var(--success); margin-top:15px;" disabled>第四步：開始即時定向導航</button>
+    </div>
 
-                    for (let stop of allNearby) { 
-                        const data = await fetchWithRetry(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`); 
-                        const buses = (data.data || []).filter(b => b.route === route); 
-                         
-                        buses.forEach(b => { 
-                            if (!directionMap[b.dest_tc]) directionMap[b.dest_tc] = []; 
-                             
-                            let stopEntry = directionMap[b.dest_tc].find(e => e.stop === stop.stop); 
-                             
-                            if (!stopEntry && new Set(directionMap[b.dest_tc].map(i => i.stop)).size < 2) { 
-                                stopEntry = { stop: stop.stop, name: stop.name_tc, dist: stop.dist, etas: [] }; 
-                                directionMap[b.dest_tc].push(stopEntry); 
-                            } 
-                             
-                            if (stopEntry && stopEntry.etas.length < 3) { 
-                                const mins = Math.max(0, Math.round((new Date(b.eta) - new Date()) / 60000)); 
-                                // 修正：只加入大於 0 分鐘的有效班次 
-                                if (mins > 0) stopEntry.etas.push(mins); 
-                            } 
-                        }); 
-                    } 
+    <div id="compass-container" class="step-card">
+        <div class="step-title" style="justify-content: center;">第四步：跟隨箭頭行進</div>
+        <div id="navTargetName" style="font-weight:bold; color:var(--success); font-size:18px; margin-bottom:5px;"></div>
+        <div id="distanceDisplay" style="font-size: 20px; font-weight:bold;">距離目標：-- 米</div>
+        <div id="arrow">
+            <svg id="arrow-img" viewBox="0 0 100 100">
+                <polygon points="50,5 95,85 50,65 5,85" fill="#28a745" />
+            </svg>
+        </div>
+        <div id="phoneStatus" class="info-box">請將電話平放或垂直面向前方</div>
+    </div>
 
-                    // 渲染 
-                    for (const [dest, stops] of Object.entries(directionMap)) { 
-                        let groupHtml = `<div class="group-title">往 ${dest}</div>`; 
-                        let hasContent = false; 
+    <script>
+        let currentCompany = "";
+        let userLat = null, userLng = null;
+        let targetLat = null, targetLng = null;
+        let targetStopName = "";
+        let targetStopId = ""; 
+        let watchId = null;
+        let allStopsData = []; 
 
-                        stops.forEach(s => { 
-                            if (s.etas.length > 0) { 
-                                hasContent = true; 
-                                let html = `<div class="card"><div class="stop-name">${s.name} (${s.dist.toFixed(2)}km)</div>`; 
-                                s.etas.forEach(mins => { 
-                                    html += `<div class="bus-row"><span>預計到達</span><span class="eta-time">${mins} 分鐘</span></div>`; 
-                                }); 
-                                groupHtml += html + `</div>`; 
-                            } 
-                        }); 
+        // 【第一步】搜尋路線方向
+        async function fetchRouteDirections() {
+            currentCompany = document.getElementById('companySelect').value;
+            const route = document.getElementById('routeInput').value.trim().toUpperCase();
+            if(!route) return alert('請輸入路線！');
+            
+            try {
+                let directions = [];
 
-                        if (hasContent) output.innerHTML += groupHtml; 
-                    } 
-                     
-                    if (!output.innerHTML) status.innerText = "目前沒有即將到站的班次"; 
-                    else status.innerText = ""; 
+                if (currentCompany === "CTB") {
+                    const res = await fetch(`https://rt.data.gov.hk/v1/transport/citybus-nwfb/route/${currentCompany}/${route}`);
+                    const data = await res.json();
+                    if(!data.data || Object.keys(data.data).length === 0) return alert('搵唔到呢條城巴路線！');
+                    directions = [['outbound', '往 ' + data.data.dest_tc], ['inbound', '往 ' + data.data.orig_tc]];
+                } else {
+                    const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route`);
+                    const data = await res.json();
+                    if(!data.data) return alert('九巴系統連線失敗！');
+                    
+                    const matchedRoutes = data.data.filter(item => item.route === route);
+                    if(matchedRoutes.length === 0) return alert('搵唔到呢條九巴路線！');
+                    
+                    matchedRoutes.forEach(item => {
+                        let dirKey = item.bound === "O" ? "outbound" : "inbound";
+                        directions.push([dirKey, '往 ' + item.dest_tc]);
+                    });
+                }
 
-                } catch(e) { status.innerText = "讀取失敗"; } 
-            }); 
-        } 
-    </script> 
-</body> 
+                const dirSelect = document.getElementById('dirSelect');
+                dirSelect.innerHTML = '<option value="">-- 請選擇方向 --</option>';
+                
+                const uniqueDirs = Array.from(new Set(directions.map(JSON.stringify))).map(JSON.parse);
+                uniqueDirs.forEach(([dir, text]) => {
+                    let opt = document.createElement('option');
+                    opt.value = dir;
+                    opt.text = text;
+                    dirSelect.appendChild(opt);
+                });
+
+                document.getElementById('step2').style.display = 'block';
+                document.getElementById('step3').style.display = 'none';
+                document.getElementById('compass-container').style.display = 'none';
+            } catch (err) {
+                alert('連線失敗: ' + err);
+            }
+        }
+
+        // 【第二步 & 第三步】獲取車站、解析站名、比對最近車站
+        async function fetchBusStops() {
+            const route = document.getElementById('routeInput').value.trim().toUpperCase();
+            const dir = document.getElementById('dirSelect').value;
+            if(!dir) return;
+
+            document.getElementById('step3').style.display = 'block';
+            document.getElementById('gpsStatus').innerText = "正在下載車站數據並定位中...";
+            document.getElementById('stopListContainer').innerHTML = "載入車站清單中...";
+            document.getElementById('etaContainer').style.display = 'none';
+
+            try {
+                let rawStopList = [];
+                allStopsData = [];
+
+                if (currentCompany === "CTB") {
+                    const routeStopsRes = await fetch(`https://rt.data.gov.hk/v1/transport/citybus-nwfb/route-stop/${currentCompany}/${route}/${dir}`);
+                    const routeStopsData = await routeStopsRes.json();
+                    rawStopList = routeStopsData.data.map(s => ({ stopId: s.stop, seq: s.seq }));
+                    
+                    const stopPromises = rawStopList.map(s => 
+                        fetch(`https://rt.data.gov.hk/v1/transport/citybus-nwfb/stop/${s.stopId}`).then(r => r.json())
+                    );
+                    const stopsDetails = await Promise.all(stopPromises);
+                    
+                    // 【關鍵修正】城巴最新官方 API 的繁體中文站名欄位為 data.name_tc
+                    allStopsData = stopsDetails.map((sd, index) => ({
+                        id: rawStopList[index].stopId,
+                        seq: rawStopList[index].seq,
+                        name: (sd.data && sd.data.name_tc) ? sd.data.name_tc : "未知車站",
+                        lat: sd.data ? parseFloat(sd.data.lat) : 0,
+                        lng: sd.data ? parseFloat(sd.data.long) : 0
+                    }));
+                } else {
+                    const kmbBound = dir === "outbound" ? "outbound" : "inbound";
+                    const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route}/${kmbBound}/1`);
+                    const data = await res.json();
+                    rawStopList = data.data.map(s => ({ stopId: s.stop, seq: parseInt(s.seq) }));
+                    
+                    const stopPromises = rawStopList.map(s => 
+                        fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop/${s.stopId}`).then(r => r.json())
+                    );
+                    const stopsDetails = await Promise.all(stopPromises);
+                    
+                    allStopsData = stopsDetails.map((sd, index) => ({
+                        id: rawStopList[index].stopId,
+                        seq: rawStopList[index].seq,
+                        name: sd.data ? sd.data.name_tc : "未知車站",
+                        lat: sd.data ? parseFloat(sd.data.lat) : 0,
+                        lng: sd.data ? parseFloat(sd.data.long) : 0
+                    }));
+                }
+
+                // 獲取用家 GPS 並比對最近車站
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    userLat = position.coords.latitude;
+                    userLng = position.coords.longitude;
+                    document.getElementById('gpsStatus').innerHTML = `我嘅位置: ${userLat.toFixed(4)}, ${userLng.toFixed(4)}`;
+
+                    let nearestStop = null;
+                    let minDistance = Infinity;
+
+                    allStopsData.forEach(stop => {
+                        const dist = getHaversineDistance(userLat, userLng, stop.lat, stop.lng);
+                        stop.distance = dist; 
+                        if(dist < minDistance) {
+                            minDistance = dist;
+                            nearestStop = stop;
+                        }
+                    });
+
+                    renderStopList(nearestStop ? nearestStop.id : null);
+
+                    if(nearestStop) {
+                        selectTargetStop(nearestStop.id, nearestStop.name, nearestStop.lat, nearestStop.lng);
+                        document.getElementById('nearestStopInfo').innerHTML = `
+                            🎯 系統已自動鎖定最近車站：<br>
+                            <span style="font-size:18px;">[${currentCompany}] ${targetStopName}</span> (第 ${nearestStop.seq} 站)<br>
+                            直線距離：約 ${(minDistance * 1000).toFixed(0)} 米
+                        `;
+                    }
+                }, (err) => {
+                    document.getElementById('gpsStatus').innerText = "GPS 定位失敗，已為你列出站名，但未能自動找出最近車站。";
+                    renderStopList(null);
+                }, { enableHighAccuracy: true });
+
+            } catch (err) {
+                alert('獲取車站失敗: ' + err);
+            }
+        }
+
+        // 渲染車站名單列表
+        function renderStopList(nearestId) {
+            const container = document.getElementById('stopListContainer');
+            container.innerHTML = "";
+            
+            allStopsData.forEach(stop => {
+                const item = document.createElement('div');
+                item.className = `stop-item ${stop.id === nearestId ? 'active' : ''}`;
+                item.id = `stop-item-${stop.id}`;
+                
+                let distText = stop.distance ? `(約 ${(stop.distance*1000).toFixed(0)}米)` : '';
+                item.innerHTML = `
+                    <span>${stop.seq}. ${stop.name} ${stop.id === nearestId ? '<span class="nearest-badge">最近</span>' : ''}</span>
+                    <span style="font-size:12px; color:#888;">${distText}</span>
+                `;
+                
+                item.onclick = () => {
+                    document.querySelectorAll('.stop-item').forEach(el => el.classList.remove('active'));
+                    item.classList.add('active');
+                    
+                    selectTargetStop(stop.id, stop.name, stop.lat, stop.lng);
+                    document.getElementById('nearestStopInfo').innerHTML = `🎯 已手動選取車站：<br><span style="font-size:18px;">[${currentCompany}] ${stop.name}</span>`;
+                };
+                
+                container.appendChild(item);
+            });
+        }
+
+        function selectTargetStop(id, name, lat, lng) {
+            targetStopId = id;
+            targetStopName = name;
+            targetLat = lat;
+            targetLng = lng;
+            document.getElementById('startNavBtn').disabled = false;
+            
+            fetchETA(id, name);
+        }
+
+        // 獲取實時班次資料 (ETA)
+        async function fetchETA(stopId, stopName) {
+            const etaContainer = document.getElementById('etaContainer');
+            const etaList = document.getElementById('etaList');
+            document.getElementById('etaTitle').innerText = `🕒 [${stopName}] 即時班次`;
+            etaContainer.style.display = 'block';
+            etaList.innerHTML = "正在載入最新班次資料...";
+
+            const route = document.getElementById('routeInput').value.trim().toUpperCase();
+
+            try {
+                let url = "";
+                if (currentCompany === "CTB") {
+                    url = `https://rt.data.gov.hk/v1/transport/citybus-nwfb/eta/${currentCompany}/${stopId}/${route}`;
+                } else {
+                    url = `https://data.etabus.gov.hk/v1/transport/kmb/eta/${stopId}/${route}/1`;
+                }
+
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                if(!data.data || data.data.length === 0) {
+                    etaList.innerHTML = "暫時未有預計班次資料。";
+                    return;
+                }
+
+                const dir = document.getElementById('dirSelect').value;
+                let matchedEta = data.data;
+                
+                if(currentCompany === "CTB") {
+                    matchedEta = data.data.filter(item => item.dir === (dir === "outbound" ? "O" : "I"));
+                } else {
+                    matchedEta = data.data.filter(item => item.dir === (dir === "outbound" ? "O" : "I"));
+                }
+
+                if(matchedEta.length === 0) matchedEta = data.data;
+
+                etaList.innerHTML = "";
+                matchedEta.slice(0, 3).forEach((item, index) => {
+                    if(!item.eta) return;
+                    
+                    const etaTime = new Date(item.eta);
+                    const now = new Date();
+                    const diffMins = Math.round((etaTime - now) / 1000 / 60);
+                    
+                    let displayText = `第 ${index + 1} 班車：`;
+                    if (diffMins <= 0) {
+                        displayText += `<span style="color:red; font-weight:bold;">即將抵達 / 已到站</span>`;
+                    } else {
+                        displayText += `<span style="color:var(--success); font-weight:bold;">${diffMins} 分鐘</span> (${etaTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})`;
+                    }
+                    
+                    if(item.rmk_tc) displayText += ` <span style="font-size:12px; color:#666;">(${item.rmk_tc})</span>`;
+
+                    const div = document.createElement('div');
+                    div.className = "eta-time";
+                    div.innerHTML = displayText;
+                    etaList.appendChild(div);
+                });
+
+                if(etaList.innerHTML === "") etaList.innerHTML = "暫無即時班次。";
+
+            } catch (err) {
+                etaList.innerHTML = "班次載入失敗: " + err;
+            }
+        }
+
+        function getHaversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        function getBearing(lat1, lng1, lat2, lng2) {
+            const dLon = (lng2 - lng1) * Math.PI / 180;
+            const lat1Rad = lat1 * Math.PI / 180;
+            const lat2Rad = lat2 * Math.PI / 180;
+            const y = Math.sin(dLon) * Math.cos(lat2Rad);
+            const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLon);
+            return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+        }
+
+        function initCompass() {
+            document.getElementById('compass-container').style.display = 'block';
+            document.getElementById('navTargetName').innerText = `目標車站：${targetStopName}`;
+            
+            if(watchId) navigator.geolocation.clearWatch(watchId);
+            watchId = navigator.geolocation.watchPosition((pos) => {
+                userLat = pos.coords.latitude;
+                userLng = pos.coords.longitude;
+                const d = getHaversineDistance(userLat, userLng, targetLat, targetLng);
+                document.getElementById('distanceDisplay').innerText = `距離目標：約 ${(d * 1000).toFixed(0)} 米`;
+            }, null, { enableHighAccuracy: true });
+
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            window.addEventListener('deviceorientation', handleOrientation, true);
+                        } else {
+                            alert('你需要允許羅盤權限先可以用到定向導航！');
+                        }
+                    }).catch(console.error);
+            } else {
+                window.addEventListener('deviceorientation', handleOrientation, true);
+            }
+        }
+
+        function handleOrientation(event) {
+            let heading = event.webkitCompassHeading || event.alpha;
+            if (heading !== null && heading !== undefined) {
+                if(!event.webkitCompassHeading) heading = 360 - heading; 
+
+                const bearing = getBearing(userLat, userLng, targetLat, targetLng);
+                let arrowAngle = bearing - heading;
+
+                if (window.orientation === 90) arrowAngle -= 90;
+                else if (window.orientation === -90) arrowAngle += 90;
+
+                document.getElementById('arrow-img').style.transform = `rotate(${arrowAngle}deg)`;
+            }
+        }
+    </script>
+</body>
 </html>
