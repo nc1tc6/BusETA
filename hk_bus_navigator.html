@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全港巴士即時定向導航 (自動更新版)</title>
+    <title>全港巴士即時定向導航</title>
     <style>
         :root { --primary: #007bff; --success: #28a745; --accent: #ffc107; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; margin: 0; background: #f8f9fa; color: #333; text-align: center; }
@@ -22,15 +22,12 @@
         .stop-item { padding: 10px; border-bottom: 1px solid #f1f1f1; cursor: pointer; font-size: 15px; display: flex; justify-content: space-between; }
         .stop-item:hover, .stop-item.active { background: #e3f2fd; font-weight: bold; }
         .nearest-badge { background: var(--success); color: white; font-size: 11px; padding: 2px 6px; border-radius: 10px; }
-        .eta-container { background: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 6px; margin-top: 10px; display: none; text-align: left; position: relative; }
-        .eta-title { font-weight: bold; color: #856404; margin-bottom: 5px; display: flex; justify-content: space-between; }
+        .eta-container { background: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 6px; margin-top: 10px; display: none; text-align: left; }
+        .eta-title { font-weight: bold; color: #856404; margin-bottom: 5px; }
         .eta-time { font-size: 14px; color: #333; margin: 3px 0; }
-        .refresh-ticker { font-size: 12px; color: #856404; font-weight: normal; }
     </style>
 </head>
 <body>
-
-    <h2>🚌 全港巴士定向導航工具</h2>
 
     <div class="step-card">
         <div class="step-title">第一步：選擇巴士公司與路線</div>
@@ -38,13 +35,13 @@
             <option value="KMB">九巴 (KMB)</option>
             <option value="CTB">城巴 (CTB)</option>
         </select>
-        <input type="text" id="routeInput" placeholder="例如: 1A, 102, 948" value="948">
+        <input type="text" id="routeInput" placeholder="例如: 1A, 102, 948">
         <button onclick="fetchRouteDirections()">搜尋路線方向</button>
     </div>
 
     <div class="step-card" id="step2" style="display:none;">
         <div class="step-title">第二步：選擇行車方向</div>
-        <select id="dirSelect" onchange="startRouteTracking()">
+        <select id="dirSelect" onchange="fetchBusStops()">
             <option value="">-- 請選擇方向 --</option>
         </select>
     </div>
@@ -56,10 +53,7 @@
         <div id="nearestStopInfo" style="margin-top:10px; font-weight:bold; color:var(--success);"></div>
         
         <div id="etaContainer" class="eta-container">
-            <div class="eta-title">
-                <span id="etaTitle">🕒 即時班次時間</span>
-                <span id="refreshTicker" class="refresh-ticker">🔄 30s 後更新</span>
-            </div>
+            <div id="etaTitle" class="eta-title">🕒 即時班次時間</div>
             <div id="etaList">正在載入班次...</div>
         </div>
 
@@ -89,20 +83,9 @@
         let targetStopId = ""; 
         let watchId = null;
         let allStopsData = []; 
-        
-        // 定時器相關變量
-        let autoRefreshInterval = null;
-        let countdownTimer = null;
-        let countdownSeconds = 30;
-        let isUserSelectedStop = false; // 紀錄用家有沒有手動選過站
 
         // 【第一步】搜尋路線方向
         async function fetchRouteDirections() {
-            // 切換路線時清除之前的定時器
-            clearInterval(autoRefreshInterval);
-            clearInterval(countdownTimer);
-            isUserSelectedStop = false;
-
             currentCompany = document.getElementById('companySelect').value;
             const route = document.getElementById('routeInput').value.trim().toUpperCase();
             if(!route) return alert('請輸入路線！');
@@ -148,54 +131,20 @@
             }
         }
 
-        // 入口函數：選擇方向後啟動定時輪詢
-        function startRouteTracking() {
-            clearInterval(autoRefreshInterval);
-            clearInterval(countdownTimer);
-            isUserSelectedStop = false;
-            
-            // 立即執行第一次
-            fetchBusStops();
-            
-            // 每 30 秒自動刷新數據
-            autoRefreshInterval = setInterval(() => {
-                fetchBusStops(true); // 帶入 true 表示這是後台自動刷新
-            }, 30000);
-
-            // 啟動倒數計時動畫
-            startCountdownTicker();
-        }
-
-        // 倒數計時視覺提示
-        function startCountdownTicker() {
-            countdownSeconds = 30;
-            document.getElementById('refreshTicker').innerText = `🔄 ${countdownSeconds}s 後更新`;
-            
-            countdownTimer = setInterval(() => {
-                countdownSeconds--;
-                if(countdownSeconds <= 0) countdownSeconds = 30;
-                document.getElementById('refreshTicker').innerText = `🔄 ${countdownSeconds}s 後更新`;
-            }, 1000);
-        }
-
         // 【第二步 & 第三步】獲取車站、解析站名、比對最近車站
-        async function fetchBusStops(isAutoRefresh = false) {
+        async function fetchBusStops() {
             const route = document.getElementById('routeInput').value.trim().toUpperCase();
             const dir = document.getElementById('dirSelect').value;
             if(!dir) return;
 
             document.getElementById('step3').style.display = 'block';
-            
-            // 如果是第一次載入，顯示載入中字眼；如果是自動刷新則悄悄在後台更替即可
-            if (!isAutoRefresh) {
-                document.getElementById('gpsStatus').innerText = "正在下載車站數據並定位中...";
-                document.getElementById('stopListContainer').innerHTML = "載入車站清單中...";
-                document.getElementById('etaContainer').style.display = 'none';
-            }
+            document.getElementById('gpsStatus').innerText = "正在下載車站數據並定位中...";
+            document.getElementById('stopListContainer').innerHTML = "載入車站清單中...";
+            document.getElementById('etaContainer').style.display = 'none';
 
             try {
                 let rawStopList = [];
-                let newStopsData = [];
+                allStopsData = [];
 
                 if (currentCompany === "CTB") {
                     const routeStopsRes = await fetch(`https://rt.data.gov.hk/v1/transport/citybus-nwfb/route-stop/${currentCompany}/${route}/${dir}`);
@@ -207,7 +156,8 @@
                     );
                     const stopsDetails = await Promise.all(stopPromises);
                     
-                    newStopsData = stopsDetails.map((sd, index) => ({
+                    // 【關鍵修正】城巴最新官方 API 的繁體中文站名欄位為 data.name_tc
+                    allStopsData = stopsDetails.map((sd, index) => ({
                         id: rawStopList[index].stopId,
                         seq: rawStopList[index].seq,
                         name: (sd.data && sd.data.name_tc) ? sd.data.name_tc : "未知車站",
@@ -225,7 +175,7 @@
                     );
                     const stopsDetails = await Promise.all(stopPromises);
                     
-                    newStopsData = stopsDetails.map((sd, index) => ({
+                    allStopsData = stopsDetails.map((sd, index) => ({
                         id: rawStopList[index].stopId,
                         seq: rawStopList[index].seq,
                         name: sd.data ? sd.data.name_tc : "未知車站",
@@ -234,13 +184,11 @@
                     }));
                 }
 
-                allStopsData = newStopsData;
-
                 // 獲取用家 GPS 並比對最近車站
                 navigator.geolocation.getCurrentPosition(async (position) => {
                     userLat = position.coords.latitude;
                     userLng = position.coords.longitude;
-                    document.getElementById('gpsStatus').innerHTML = `我嘅位置: ${userLat.toFixed(4)}, ${userLng.toFixed(4)} (最後更新: ${new Date().toLocaleTimeString()})`;
+                    document.getElementById('gpsStatus').innerHTML = `我嘅位置: ${userLat.toFixed(4)}, ${userLng.toFixed(4)}`;
 
                     let nearestStop = null;
                     let minDistance = Infinity;
@@ -254,64 +202,47 @@
                         }
                     });
 
-                    // 判斷當前要高亮與選取的 Stop ID 
-                    // 如果用家手動選過，就跟用家選的；否則跟隨系統 GPS 算出的最近站
-                    let activeStopId = (isUserSelectedStop && targetStopId) ? targetStopId : (nearestStop ? nearestStop.id : null);
-                    
-                    renderStopList(activeStopId, nearestStop ? nearestStop.id : null);
+                    renderStopList(nearestStop ? nearestStop.id : null);
 
-                    if(activeStopId) {
-                        const currentStop = allStopsData.find(s => s.id === activeStopId);
-                        if (currentStop) {
-                            // 如果用家沒有手動選站，就每次自動更新 target 的經緯度與名字
-                            if (!isUserSelectedStop) {
-                                selectTargetStop(currentStop.id, currentStop.name, currentStop.lat, currentStop.lng, false);
-                                document.getElementById('nearestStopInfo').innerHTML = `
-                                    🎯 系統已自動鎖定最近車站：<br>
-                                    <span style="font-size:18px;">[${currentCompany}] ${targetStopName}</span> (第 ${currentStop.seq} 站)<br>
-                                    直線距離：約 ${(currentStop.distance * 1000).toFixed(0)} 米
-                                `;
-                            } else {
-                                // 如果是手動選的，只默默更新對應站點的 ETA 即可
-                                fetchETA(currentStop.id, currentStop.name);
-                            }
-                        }
+                    if(nearestStop) {
+                        selectTargetStop(nearestStop.id, nearestStop.name, nearestStop.lat, nearestStop.lng);
+                        document.getElementById('nearestStopInfo').innerHTML = `
+                            🎯 系統已自動鎖定最近車站：<br>
+                            <span style="font-size:18px;">[${currentCompany}] ${targetStopName}</span> (第 ${nearestStop.seq} 站)<br>
+                            直線距離：約 ${(minDistance * 1000).toFixed(0)} 米
+                        `;
                     }
                 }, (err) => {
-                    document.getElementById('gpsStatus').innerText = "GPS 定位失敗，已列出站名，無法自動計算距離。";
-                    let activeStopId = targetStopId || null;
-                    renderStopList(activeStopId, null);
+                    document.getElementById('gpsStatus').innerText = "GPS 定位失敗，已為你列出站名，但未能自動找出最近車站。";
+                    renderStopList(null);
                 }, { enableHighAccuracy: true });
 
             } catch (err) {
-                console.error('自動刷新出錯: ' + err);
+                alert('獲取車站失敗: ' + err);
             }
         }
 
         // 渲染車站名單列表
-        function renderStopList(activeId, nearestId) {
+        function renderStopList(nearestId) {
             const container = document.getElementById('stopListContainer');
             container.innerHTML = "";
             
             allStopsData.forEach(stop => {
                 const item = document.createElement('div');
-                item.className = `stop-item ${stop.id === activeId ? 'active' : ''}`;
+                item.className = `stop-item ${stop.id === nearestId ? 'active' : ''}`;
                 item.id = `stop-item-${stop.id}`;
                 
                 let distText = stop.distance ? `(約 ${(stop.distance*1000).toFixed(0)}米)` : '';
-                let badgeText = stop.id === nearestId ? '<span class="nearest-badge">最近</span>' : '';
-                
                 item.innerHTML = `
-                    <span>${stop.seq}. ${stop.name} ${badgeText}</span>
+                    <span>${stop.seq}. ${stop.name} ${stop.id === nearestId ? '<span class="nearest-badge">最近</span>' : ''}</span>
                     <span style="font-size:12px; color:#888;">${distText}</span>
                 `;
                 
                 item.onclick = () => {
-                    isUserSelectedStop = true; // 標記用家進入手動模式
                     document.querySelectorAll('.stop-item').forEach(el => el.classList.remove('active'));
                     item.classList.add('active');
                     
-                    selectTargetStop(stop.id, stop.name, stop.lat, stop.lng, true);
+                    selectTargetStop(stop.id, stop.name, stop.lat, stop.lng);
                     document.getElementById('nearestStopInfo').innerHTML = `🎯 已手動選取車站：<br><span style="font-size:18px;">[${currentCompany}] ${stop.name}</span>`;
                 };
                 
@@ -319,7 +250,7 @@
             });
         }
 
-        function selectTargetStop(id, name, lat, lng, fromUserClick = false) {
+        function selectTargetStop(id, name, lat, lng) {
             targetStopId = id;
             targetStopName = name;
             targetLat = lat;
@@ -327,11 +258,6 @@
             document.getElementById('startNavBtn').disabled = false;
             
             fetchETA(id, name);
-            
-            // 如果第四步導航開緊，順便即時更新導航目標站名
-            if(document.getElementById('compass-container').style.display === 'block') {
-                document.getElementById('navTargetName').innerText = `目標車站：${targetStopName}`;
-            }
         }
 
         // 獲取實時班次資料 (ETA)
@@ -340,6 +266,7 @@
             const etaList = document.getElementById('etaList');
             document.getElementById('etaTitle').innerText = `🕒 [${stopName}] 即時班次`;
             etaContainer.style.display = 'block';
+            etaList.innerHTML = "正在載入最新班次資料...";
 
             const route = document.getElementById('routeInput').value.trim().toUpperCase();
 
